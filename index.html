@@ -1269,24 +1269,6 @@ function mergeDocxXml(xml, values) {
   return xml;
 }
 // Scan DOCX XML for all placeholder keys, handling all split-run patterns
-function extractDocxPlaceholders(xml) {
-  const keys = new Set();
-  // Match {{ ... }} allowing XML tags inside - strip tags to get key
-  const re = /\{\{((?:[^}<>]|<[^>]+>)*?)\}\}/g;
-  let m;
-  while ((m = re.exec(xml)) !== null) {
-    const key = m[1].replace(/<[^>]+>/g, '').trim();
-    if (/^[a-z][a-z0-9_]*$/i.test(key)) keys.add(key);
-  }
-  return [...keys];
-}
-
-async function scanDocx(buffer) {
-  const zip = await JSZip.loadAsync(buffer);
-  const xml = await zip.file('word/document.xml').async('string');
-  return extractDocxPlaceholders(xml);
-}
-
 async function mergeDocx(buffer, values) {
   const zip = await JSZip.loadAsync(buffer);
   const docXml = await zip.file('word/document.xml').async('string');
