@@ -163,7 +163,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 ::-webkit-scrollbar-thumb{background:var(--dim);border-radius:3px}
 
 /* ── SOA Export Panel ── */
-.soa-section-hdr{display:flex;align-items:center;padding:6px 12px;border-radius:5px;margin:8px 0 6px;font-family:"Syne",sans-serif;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fff}
+.soa-section-hdr{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;border-radius:5px;margin:8px 0 6px;font-family:"Syne",sans-serif;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fff}
 .soa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
 .soa-field{display:flex;flex-direction:column;gap:3px}
 .soa-field.wide{grid-column:1/-1}
@@ -310,12 +310,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         <div class="log" id="run-log">Ready. Configure files and fields then click Run Merge.</div>
       </div>
     </div>
-
-  </div>
-</div>
-
-
-    <!-- ══ SOA EXPORT PANEL ══ -->
+<!-- ══ SOA EXPORT PANEL ══ -->
     <div class="panel" id="panel-soa">
       <div class="panel-body">
         <div class="panel-title">SOA Data Export</div>
@@ -392,6 +387,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         </div>
       </div>
     </div>
+
+  </div>
+</div>
 
 <!-- ── Add Category Modal ── -->
 <div class="modal-backdrop hidden" id="modal-backdrop">
