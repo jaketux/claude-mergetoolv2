@@ -1,0 +1,1462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merge Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Syne:wght@600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap');
+
+:root {
+  --bg:      #0D0F18;
+  --s1:      #141720;
+  --s2:      #1C2030;
+  --s3:      #242840;
+  --accent:  #5B8DEF;
+  --accent2: #8B6FE8;
+  --green:   #2DD4A0;
+  --red:     #F06A6A;
+  --amber:   #F5A623;
+  --text:    #DDE3F0;
+  --muted:   #5E6880;
+  --dim:     #363D52;
+  --border:  #1E2235;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;overflow:hidden}
+
+/* ── Layout ── */
+.shell{display:grid;grid-template-rows:52px 42px 1fr;height:100vh}
+.header{background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px}
+.header h1{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--accent);letter-spacing:.02em}
+.header .sub{color:var(--muted);font-size:11px}
+.tabs{background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:stretch}
+.tab{padding:0 22px;font-weight:600;font-size:12px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.15s;display:flex;align-items:center;gap:7px}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--s2)}
+.tab .badge{background:var(--s3);border-radius:10px;padding:1px 7px;font-size:10px;color:var(--muted)}
+.tab.active .badge{background:rgba(91,141,239,.15);color:var(--accent)}
+.main{overflow:hidden;display:grid;grid-template-columns:1fr}
+
+/* ── Panels ── */
+.panel{display:none;height:100%;overflow:hidden;flex-direction:column}
+.panel.active{display:flex}
+.panel-body{flex:1;overflow-y:auto;padding:20px 24px}
+.panel-body::-webkit-scrollbar{width:5px}
+.panel-body::-webkit-scrollbar-thumb{background:var(--dim);border-radius:3px}
+.panel-footer{padding:12px 24px;border-top:1px solid var(--border);background:var(--s1);display:flex;flex-direction:column;gap:8px}
+
+/* ── Typography ── */
+.panel-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--text);margin-bottom:3px}
+.panel-sub{font-size:11px;color:var(--muted);margin-bottom:16px}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:none;border-radius:5px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:12px;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:hover{filter:brightness(1.12)}
+.btn-accent{background:var(--accent);color:#fff}
+.btn-accent2{background:var(--accent2);color:#fff}
+.btn-grey{background:var(--s3);color:var(--text)}
+.btn-green{background:var(--green);color:#052e1c;font-weight:700}
+.btn-red{background:rgba(240,106,106,.15);color:var(--red);border:1px solid rgba(240,106,106,.25)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* ── Toolbar label ── */
+.tlabel{font-size:11px;color:var(--muted);min-width:90px;text-align:right}
+
+/* ── Add bar ── */
+.add-bar{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.mono-wrap{display:flex;align-items:center;gap:3px}
+.brace{font-family:'JetBrains Mono',monospace;color:var(--accent);font-size:13px}
+.add-bar input[type=text]{background:var(--s3);border:none;outline:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px;padding:5px 8px;border-radius:4px;width:180px}
+.add-bar input[type=text]:focus{box-shadow:0 0 0 1.5px var(--accent)}
+.add-bar .hint{color:var(--dim);font-size:11px}
+
+/* ── Section header ── */
+.sec-hdr{display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:5px;margin:14px 0 5px;font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;user-select:none}
+.sec-hdr .sec-count{font-family:'DM Sans',sans-serif;font-weight:400;font-size:10px;opacity:.7;margin-left:auto}
+.sec-hdr .sec-toggle{font-size:10px;opacity:.6;transition:.2s}
+.sec-hdr.collapsed .sec-toggle{transform:rotate(-90deg)}
+.sec-body{transition:.15s}
+.sec-body.hidden{display:none}
+
+/* ── Two-column layout ── */
+.two-col{display:grid;grid-template-columns:1fr 1px 1fr;gap:0 16px}
+.col-div{background:var(--border)}
+.col-lbl{font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:4px 2px 6px;display:flex;align-items:center;gap:6px}
+
+/* ── Field row ── */
+.field-row{display:flex;align-items:center;gap:6px;padding:3px 2px;border-radius:4px;margin-bottom:2px;transition:.1s}
+.field-row:hover{background:rgba(255,255,255,.025)}
+.field-row.dragging{opacity:.4;background:var(--s2)}
+.field-row.drag-over{border-top:2px solid var(--accent)}
+.drag-handle{color:var(--dim);cursor:grab;font-size:13px;padding:0 3px;flex-shrink:0;user-select:none}
+.drag-handle:active{cursor:grabbing}
+.ph-tag{background:var(--s2);border:1px solid var(--border);border-radius:3px;padding:3px 7px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);white-space:nowrap;flex-shrink:0}
+.ph-tag.partner{color:var(--accent2)}
+.ph-tag.other{color:var(--amber)}
+.field-input{background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;flex:1;min-width:0;transition:.1s}
+.field-input:focus{border-color:var(--accent);background:var(--s1)}
+.field-input:disabled{opacity:.3;cursor:not-allowed}
+.sec-select{background:var(--s3);border:1px solid var(--border);border-radius:4px;color:var(--muted);font-size:10px;padding:3px 6px;outline:none;cursor:pointer;flex-shrink:0}
+.sec-select:focus{border-color:var(--accent)}
+.cb{accent-color:var(--accent);width:14px;height:14px;flex-shrink:0;cursor:pointer}
+.rm-btn{background:none;border:none;color:var(--dim);cursor:pointer;font-size:11px;padding:3px 6px;border-radius:3px;flex-shrink:0;transition:.1s}
+.rm-btn:hover{color:var(--red);background:rgba(240,106,106,.1)}
+
+/* ── File list ── */
+.file-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.file-item{background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:10px;transition:.15s}
+.file-item:hover{border-color:var(--dim)}
+.file-item.disabled{opacity:.4}
+.file-icon{width:32px;height:32px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.file-icon.docx{background:rgba(91,141,239,.15);color:var(--accent)}
+.file-icon.xlsx{background:rgba(45,212,160,.15);color:var(--green)}
+.file-meta{flex:1;min-width:0}
+.file-name{font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-size{font-size:10px;color:var(--muted);margin-top:1px}
+.file-phs{font-size:10px;color:var(--accent);margin-top:2px;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drop-zone{border:2px dashed var(--dim);border-radius:8px;padding:32px;text-align:center;color:var(--muted);transition:.2s;cursor:pointer;margin-bottom:16px}
+.drop-zone:hover,.drop-zone.drag-over-zone{border-color:var(--accent);color:var(--accent);background:rgba(91,141,239,.04)}
+.drop-zone .dz-icon{font-size:28px;margin-bottom:8px}
+.drop-zone .dz-text{font-size:13px;font-weight:600}
+.drop-zone .dz-sub{font-size:11px;margin-top:4px;color:var(--dim)}
+
+/* ── Run tab ── */
+.stat-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.stat-card{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:14px 20px;text-align:center;min-width:110px}
+.stat-num{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--accent)}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.06em}
+.log{background:var(--s1);border:1px solid var(--border);border-radius:6px;padding:14px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.7;max-height:300px;overflow-y:auto;white-space:pre-wrap}
+.log .ok{color:var(--green)}
+.log .err{color:var(--red)}
+.log .skip{color:var(--amber)}
+.log .info{color:var(--accent)}
+.log .dim{color:var(--muted)}
+
+/* ── Modals ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(3px)}
+.modal-backdrop.hidden{display:none}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:24px;min-width:360px;max-width:480px;width:90%}
+.modal h2{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:6px}
+.modal p{color:var(--muted);font-size:12px;margin-bottom:16px}
+.modal input[type=text]{width:100%;background:var(--s2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 12px;outline:none;margin-bottom:14px}
+.modal input[type=text]:focus{border-color:var(--accent)}
+.modal-color-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.color-swatch{width:28px;height:28px;border-radius:5px;cursor:pointer;border:2px solid transparent;transition:.1s}
+.color-swatch.selected{border-color:var(--text)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+
+/* ── Select row ── */
+.sel-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sel-row span{font-size:11px;color:var(--muted)}
+
+/* ── Placeholder chip in "Other" ── */
+.other-hint{font-size:10px;color:var(--amber);margin-left:4px}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--dim);border-radius:3px}
+
+/* ── SOA Export Panel ── */
+.soa-section-hdr{display:flex;align-items:center;padding:6px 12px;border-radius:5px;margin:8px 0 6px;font-family:"Syne",sans-serif;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#fff}
+.soa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
+.soa-field{display:flex;flex-direction:column;gap:3px}
+.soa-field.wide{grid-column:1/-1}
+.soa-field label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.soa-field input,.soa-field textarea{background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:"DM Sans",sans-serif;font-size:12px;padding:6px 9px;border-radius:4px;resize:vertical;line-height:1.5}
+.soa-field input:focus,.soa-field textarea:focus{border-color:var(--accent);background:var(--s1)}
+.soa-strat{background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:12px 14px;margin-bottom:10px}
+.soa-strat-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-weight:700;font-size:12px;color:var(--accent)}
+.soa-strat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px}
+.soa-strat-field{display:flex;flex-direction:column;gap:2px}
+.soa-strat-field.wide{grid-column:1/-1}
+.soa-strat-field label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.soa-strat-field input,.soa-strat-field textarea{background:var(--s1);border:1px solid var(--border);outline:none;color:var(--text);font-family:"DM Sans",sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;resize:vertical}
+.soa-strat-field input:focus,.soa-strat-field textarea:focus{border-color:var(--accent)}
+.soa-ph-row{display:flex;align-items:center;gap:6px;padding:3px 0}
+.soa-ph-row .ph-tag{min-width:140px}
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>◈ MERGE TOOL</h1>
+    <span class="sub">placeholder → value document merging</span>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('files')" id="tab-files">
+      📄 Files <span class="badge" id="badge-files">0</span>
+    </div>
+    <div class="tab" onclick="switchTab('fields')" id="tab-fields">
+      ✏️ Fill Fields <span class="badge" id="badge-fields">0</span>
+    </div>
+    <div class="tab" onclick="switchTab('run')" id="tab-run">
+      ▶ Run
+    </div>
+    <div class="tab" onclick="switchTab('soa')" id="tab-soa">
+      📋 SOA Export
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- ══ FILES PANEL ══ -->
+    <div class="panel active" id="panel-files">
+      <div class="panel-body">
+        <div class="panel-title">Template Files</div>
+        <div class="panel-sub">Upload .docx and .xlsx files containing {{placeholders}}. Originals are never modified.</div>
+
+        <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <div class="dz-icon">📂</div>
+          <div class="dz-text">Drop files here or click to browse</div>
+          <div class="dz-sub">Supports .docx and .xlsx</div>
+        </div>
+        <input type="file" id="file-input" multiple accept=".docx,.xlsx" style="display:none" onchange="handleFileInput(this.files)">
+
+        <div class="btn-row" style="margin-bottom:14px">
+          <button class="btn btn-accent2" onclick="scanAllFiles()">🔍 Scan Placeholders</button>
+          <button class="btn btn-grey btn-sm" onclick="toggleAllFiles(true)">All</button>
+          <button class="btn btn-grey btn-sm" onclick="toggleAllFiles(false)">None</button>
+          <button class="btn btn-red btn-sm" style="margin-left:auto" onclick="clearFiles()">Clear All</button>
+        </div>
+
+        <div class="file-list" id="file-list"></div>
+      </div>
+
+      <div class="panel-footer">
+        <div class="btn-row">
+          <span class="tlabel">Output:</span>
+          <span style="color:var(--muted);font-size:11px">Files will download to your browser's Downloads folder</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ FIELDS PANEL ══ -->
+    <div class="panel" id="panel-fields">
+      <div class="panel-body">
+        <div class="panel-title">Fill In Values</div>
+        <div class="panel-sub">Check a field to replace its placeholder. Assign any field to a section using the dropdown.</div>
+
+        <!-- Add placeholder -->
+        <div class="add-bar">
+          <span style="font-weight:600;color:var(--muted);font-size:12px">Add placeholder:</span>
+          <div class="mono-wrap">
+            <span class="brace">{{</span>
+            <input type="text" id="new-ph-input" placeholder="placeholder_name" onkeydown="if(event.key==='Enter')addPlaceholder()">
+            <span class="brace">}}</span>
+          </div>
+          <button class="btn btn-accent btn-sm" onclick="addPlaceholder()">+ Add</button>
+          <span class="hint">Press Enter or click Add</span>
+        </div>
+
+        <!-- Select all/none + Add Category -->
+        <div class="sel-row">
+          <span>Fields:</span>
+          <button class="btn btn-grey btn-sm" onclick="toggleAllFields(true)">All</button>
+          <button class="btn btn-grey btn-sm" onclick="toggleAllFields(false)">None</button>
+          <button class="btn btn-accent2 btn-sm" style="margin-left:auto" onclick="showAddCategory()">+ Add Category</button>
+        </div>
+
+        <!-- Dynamic field form -->
+        <div id="field-form"></div>
+      </div>
+
+      <div class="panel-footer">
+        <div class="btn-row">
+          <span class="tlabel">Values:</span>
+          <button class="btn btn-grey btn-sm" onclick="saveValues()">💾 Save</button>
+          <button class="btn btn-grey btn-sm" onclick="loadValues()">📂 Load</button>
+          <button class="btn btn-grey btn-sm" onclick="resetValues()">↺ Reset</button>
+        </div>
+        <div class="btn-row">
+          <span class="tlabel">Placeholders:</span>
+          <button class="btn btn-grey btn-sm" onclick="savePlaceholders()">💾 Save</button>
+          <button class="btn btn-grey btn-sm" onclick="loadPlaceholders()">📂 Load</button>
+        </div>
+        <div class="btn-row">
+          <span class="tlabel">Sections:</span>
+          <button class="btn btn-grey btn-sm" onclick="saveSections()">💾 Save</button>
+          <button class="btn btn-grey btn-sm" onclick="loadSections()">📂 Load</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RUN PANEL ══ -->
+    <div class="panel" id="panel-run">
+      <div class="panel-body">
+        <div class="panel-title">Run Merge</div>
+        <div class="panel-sub">Only checked files and checked fields will be processed. Merged files download automatically.</div>
+
+        <div class="stat-row">
+          <div class="stat-card"><div class="stat-num" id="stat-files">0</div><div class="stat-lbl">Files Active</div></div>
+          <div class="stat-card"><div class="stat-num" id="stat-fields">0</div><div class="stat-lbl">Fields Active</div></div>
+          <div class="stat-card"><div class="stat-num" id="stat-skipped">0</div><div class="stat-lbl">Skipped</div></div>
+        </div>
+
+        <button class="btn btn-green" style="font-size:14px;padding:10px 28px;margin-bottom:20px" onclick="runMerge()">▶  Run Merge</button>
+
+        <div class="panel-sub">Log</div>
+        <div class="log" id="run-log">Ready. Configure files and fields then click Run Merge.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+    <!-- ══ SOA EXPORT PANEL ══ -->
+    <div class="panel" id="panel-soa">
+      <div class="panel-body">
+        <div class="panel-title">SOA Data Export</div>
+        <div class="panel-sub">Fill in the fields below. Placeholders like <span style="font-family:monospace;color:var(--accent)">{{client_name}}</span> in your text will be replaced automatically. Click Export to download a filled soa_data_template.xlsx.</div>
+
+        <!-- SOA ID + Entity -->
+        <div class="soa-section-hdr" style="background:#1F3864">Meta</div>
+        <div class="soa-grid">
+          <div class="soa-field"><label>SOA ID</label><input type="text" id="soa_id" placeholder="e.g. smith_2026"></div>
+          <div class="soa-field"><label>Client Entity ID</label><input type="text" id="client_entity_id" placeholder="e.g. 390263"></div>
+        </div>
+
+        <!-- Placeholders -->
+        <div class="soa-section-hdr" style="background:#2E75B6;margin-top:14px">Client Placeholders</div>
+        <div class="panel-sub" style="margin:6px 0 8px">Define {{placeholders}} here — they will be substituted in all rich text fields below before export.</div>
+        <div id="soa-ph-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
+        <div class="add-bar" style="margin-bottom:0">
+          <span style="font-weight:600;color:var(--muted);font-size:12px">Add placeholder:</span>
+          <div class="mono-wrap">
+            <span class="brace">{{</span>
+            <input type="text" id="soa-ph-key" placeholder="client_name" style="width:140px">
+            <span class="brace">}}</span>
+          </div>
+          <input type="text" id="soa-ph-val" placeholder="value" style="background:var(--s3);border:none;outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:200px">
+          <button class="btn btn-accent btn-sm" onclick="soaAddPh()">+ Add</button>
+        </div>
+
+        <!-- Strategies -->
+        <div class="soa-section-hdr" style="background:#375623;margin-top:16px">Strategies <button class="btn btn-grey btn-sm" style="margin-left:auto;font-size:10px" onclick="soaAddStrategy()">+ Add Strategy</button></div>
+        <div id="soa-strategies"></div>
+
+        <!-- Scope of Advice text -->
+        <div class="soa-section-hdr" style="background:#2E75B6;margin-top:14px">Scope of Advice Text</div>
+        <div class="soa-grid">
+          <div class="soa-field wide"><label>Scope In — Insurance</label><textarea id="scope_in_text_insurance" rows="3" placeholder="Use Alt+Enter for line breaks. Tables: [TABLE] header|col2 / row1|val [/TABLE]"></textarea></div>
+          <div class="soa-field wide"><label>Scope In — Investments</label><textarea id="scope_in_text_investments" rows="3" placeholder="Use Alt+Enter for line breaks..."></textarea></div>
+          <div class="soa-field wide"><label>Scope In — Superannuation</label><textarea id="scope_in_text_super" rows="3" placeholder=""></textarea></div>
+          <div class="soa-field wide"><label>Scope In — Debt Management</label><textarea id="scope_in_text_debt" rows="3" placeholder=""></textarea></div>
+          <div class="soa-field wide"><label>Scope In — Retirement Planning</label><textarea id="scope_in_text_retirement" rows="3" placeholder=""></textarea></div>
+          <div class="soa-field wide"><label>Scope In — Estate Planning</label><textarea id="scope_in_text_estate" rows="3" placeholder=""></textarea></div>
+          <div class="soa-field wide"><label>Scope In — Cashflow</label><textarea id="scope_in_text_cashflow" rows="3" placeholder=""></textarea></div>
+          <div class="soa-field wide"><label>Scope In — Social Security</label><textarea id="scope_in_text_social" rows="3" placeholder=""></textarea></div>
+        </div>
+
+        <!-- Ongoing Review -->
+        <div class="soa-section-hdr" style="background:#538135;margin-top:14px">Ongoing Review Service</div>
+        <div class="soa-grid">
+          <div class="soa-field wide"><label>Ongoing Review Service Text</label><textarea id="ors_text" rows="6" placeholder="We believe it is important...&#10;&#10;[TABLE]&#10;Service | Frequency | Delivery&#10;Annual review meeting | Annually | In person / Zoom&#10;[/TABLE]"></textarea></div>
+        </div>
+
+        <!-- Implementation -->
+        <div class="soa-section-hdr" style="background:#0070C0;margin-top:14px">Implementation</div>
+        <div class="soa-grid">
+          <div class="soa-field wide"><label>Implementation Text</label><textarea id="implementation_text" rows="4" placeholder=""></textarea></div>
+        </div>
+
+        <!-- Important Relationships -->
+        <div class="soa-section-hdr" style="background:#BF8F00;margin-top:14px">Fees &amp; Charges</div>
+        <div class="soa-grid">
+          <div class="soa-field wide"><label>Important Relationships</label><textarea id="important_relationships_text" rows="3" placeholder=""></textarea></div>
+        </div>
+
+      </div>
+      <div class="panel-footer">
+        <div class="btn-row">
+          <span class="tlabel">Export:</span>
+          <button class="btn btn-green" onclick="soaExport()">📥 Export to Excel</button>
+          <button class="btn btn-grey btn-sm" onclick="soaSave()">💾 Save Draft</button>
+          <button class="btn btn-grey btn-sm" onclick="soaLoad()">📂 Load Draft</button>
+          <button class="btn btn-red btn-sm" style="margin-left:auto" onclick="soaClear()">↺ Clear</button>
+        </div>
+        <div style="font-size:10px;color:var(--muted)">
+          Rich text fields: use <b>Alt+Enter</b> for line breaks. For tables: <code>[TABLE] Header1 | Header2 / Row1 | Row2 [/TABLE]</code> — rows separated by newlines, cells by |. Bold: **text**. Green: ~~text~~.
+        </div>
+      </div>
+    </div>
+
+<!-- ── Add Category Modal ── -->
+<div class="modal-backdrop hidden" id="modal-backdrop">
+  <div class="modal">
+    <h2 id="modal-title">Add Category</h2>
+    <p id="modal-desc">Give your new category a name and pick a colour.</p>
+    <input type="text" id="modal-cat-name" placeholder="e.g. Insurance, Retirement">
+    <div class="modal-color-row" id="modal-colors"></div>
+    <div class="modal-actions">
+      <button class="btn btn-grey" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" onclick="saveCategory()">Save Category</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+let state = {
+  files: [],        // [{name, size, ext, data:ArrayBuffer, enabled, placeholders:[]}]
+  placeholders: [], // [{key, enabled, section}]
+  values: {},       // {key: value}
+  sections: [       // ordered list of sections
+    { id:'general',  name:'General',         color:'#374151' },
+    { id:'client',   name:'Client',          color:'#1D4ED8' },
+    { id:'partner',  name:'Partner',         color:'#6D28D9' },
+    { id:'loans',    name:'Loan Details',    color:'#065F46' },
+    { id:'smsf',     name:'SMSF',            color:'#7C3AED' },
+    { id:'other',    name:'Other',           color:'#78350F' },
+  ],
+  collapsedSections: new Set(),
+};
+
+const COLORS = ['#1D4ED8','#065F46','#7C3AED','#B45309','#0F766E','#BE185D','#374151','#9F1239','#1E40AF','#166534'];
+let modalColor = COLORS[0];
+let editingSectionId = null;
+
+// ═══════════════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'run') updateStats();
+  if (name === 'fields') renderFieldForm();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FILES
+// ═══════════════════════════════════════════════════════════════════
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over-zone'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over-zone'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over-zone');
+  handleFileInput(e.dataTransfer.files);
+});
+
+function handleFileInput(fileList) {
+  Array.from(fileList).forEach(file => {
+    if (state.files.find(f => f.name === file.name)) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['docx','xlsx'].includes(ext)) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      state.files.push({ name: file.name, size: file.size, ext, data: e.target.result, enabled: true, placeholders: [] });
+      renderFileList();
+      updateBadge('files', state.files.length);
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function renderFileList() {
+  const el = document.getElementById('file-list');
+  if (!state.files.length) { el.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">No files added yet</div>'; return; }
+  el.innerHTML = state.files.map((f,i) => `
+    <div class="file-item ${f.enabled?'':'disabled'}">
+      <div class="file-icon ${f.ext}">${f.ext==='docx'?'📄':'📊'}</div>
+      <div class="file-meta">
+        <div class="file-name">${f.name}</div>
+        <div class="file-size">${(f.size/1024).toFixed(1)} KB · ${f.ext.toUpperCase()}</div>
+        ${f.placeholders.length ? `<div class="file-phs">${f.placeholders.slice(0,6).map(p=>`{{${p}}}`).join('  ')}${f.placeholders.length>6?` +${f.placeholders.length-6} more`:''}</div>` : ''}
+      </div>
+      <input class="cb" type="checkbox" ${f.enabled?'checked':''} onchange="state.files[${i}].enabled=this.checked;renderFileList()">
+      <button class="rm-btn" onclick="removeFile(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removeFile(i) { state.files.splice(i,1); renderFileList(); updateBadge('files',state.files.length); }
+function clearFiles() { state.files=[]; renderFileList(); updateBadge('files',0); }
+function toggleAllFiles(v) { state.files.forEach(f=>f.enabled=v); renderFileList(); }
+
+// ═══════════════════════════════════════════════════════════════════
+// SCAN PLACEHOLDERS FROM FILES
+// ═══════════════════════════════════════════════════════════════════
+const PH_RE = /\{\{([^}]+)\}\}/g;
+
+async function scanAllFiles() {
+  let found = new Set();
+  for (const f of state.files) {
+    let phs = [];
+    try {
+      if (f.ext === 'docx') phs = await scanDocx(f.data);
+      else if (f.ext === 'xlsx') phs = await scanXlsx(f.data);
+    } catch(e) { console.warn('scan error', f.name, e); }
+    f.placeholders = phs;
+    phs.forEach(p => found.add(p));
+  }
+  // add new ones, preserve existing
+  const existing = new Set(state.placeholders.map(p=>p.key));
+  found.forEach(key => {
+    if (!existing.has(key)) {
+      state.placeholders.push({ key, enabled: true, section: guessSection(key) });
+    }
+  });
+  renderFileList();
+  renderFieldForm();
+  updateBadge('fields', state.placeholders.length);
+  alert(`Scan complete. Found ${found.size} unique placeholder(s).`);
+}
+
+async function scanDocx(buffer) {
+  const zip = await JSZip.loadAsync(buffer);
+  const xml = await zip.file('word/document.xml').async('string');
+  return extractDocxPlaceholders(xml);
+}
+
+// Extract placeholder keys from DOCX XML, correctly handling all split-run patterns:
+//  Type A: <w:t>{{</w:t> ... key nodes ... <w:t>}}</w:t>          ({{ is its own node)
+//  Type B: <w:t>{{partial_</w:t> ... <w:t>rest}}</w:t>            ({{ shares node with key start)
+//  Type C: <w:t>text {{key}} text</w:t>                           (entirely within one node)
+function extractDocxPlaceholders(xml) {
+  const keys = new Set();
+  // Unified: match {{ ... }} allowing XML tags inside, then strip tags to get the key
+  const re = /\{\{((?:[^}<>]|<[^>]+>)*?)\}\}/g;
+  let m;
+  while ((m = re.exec(xml)) !== null) {
+    const raw = m[1];
+    // Strip any XML tags to get the plain key text
+    const key = raw.replace(/<[^>]+>/g, '').trim();
+    // Only accept valid identifier-style keys (letters, digits, underscores)
+    if (/^[a-z][a-z0-9_]*$/i.test(key)) keys.add(key);
+  }
+  return [...keys];
+}
+
+async function scanXlsx(buffer) {
+  const zip = await JSZip.loadAsync(buffer);
+  const found = new Set();
+  const sharedStrings = zip.file('xl/sharedStrings.xml');
+  if (sharedStrings) {
+    const xml = await sharedStrings.async('string');
+    [...xml.matchAll(PH_RE)].forEach(m => found.add(m[1]));
+  }
+  // also check sheet files directly
+  const sheetFiles = Object.keys(zip.files).filter(n => n.match(/xl\/worksheets\/sheet\d+\.xml/));
+  for (const sf of sheetFiles) {
+    const xml = await zip.file(sf).async('string');
+    [...xml.matchAll(PH_RE)].forEach(m => found.add(m[1]));
+  }
+  return [...found];
+}
+
+function guessSection(key) {
+  if (key.startsWith('client_')) return 'client';
+  if (key.startsWith('partner_')) return 'partner';
+  if (key.includes('mortgage') || key.includes('loan_repay')) return 'loans';
+  if (key.startsWith('smsf_')) return 'smsf';
+  if (['retirement_income_goal','client_retirement_age','partner_retirement_age'].includes(key)) return 'general';
+  return 'other';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FIELD FORM
+// ═══════════════════════════════════════════════════════════════════
+function renderFieldForm() {
+  const el = document.getElementById('field-form');
+  if (!state.placeholders.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:40px;text-align:center">Add a placeholder above, or scan your files to detect them automatically.</div>';
+    return;
+  }
+
+  // Group by section
+  const groups = {};
+  state.sections.forEach(s => groups[s.id] = []);
+  state.placeholders.forEach(ph => {
+    const sid = ph.section || 'other';
+    if (!groups[sid]) groups['other'].push(ph);
+    else groups[sid].push(ph);
+  });
+
+  const sectionOptions = state.sections.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+  let html = '';
+  state.sections.forEach(sec => {
+    const phs = groups[sec.id] || [];
+    if (!phs.length) return;
+    const collapsed = state.collapsedSections.has(sec.id);
+
+    // special two-col for client/partner
+    if (sec.id === 'client' || sec.id === 'partner') {
+      // rendered together below
+      return;
+    }
+
+    html += `
+      <div class="sec-hdr" style="background:${sec.color}" onclick="toggleSection('${sec.id}')" data-sec="${sec.id}">
+        ${sec.name}
+        <span class="sec-count">${phs.length} field${phs.length!==1?'s':''}</span>
+        <span class="sec-toggle">${collapsed?'▶':'▼'}</span>
+      </div>
+      <div class="sec-body ${collapsed?'hidden':''}" id="sec-body-${sec.id}">
+        ${phs.map(ph => fieldRowHTML(ph, sectionOptions, false)).join('')}
+      </div>`;
+  });
+
+  // Client + Partner side by side
+  const clientPhs  = groups['client']  || [];
+  const partnerPhs = groups['partner'] || [];
+  if (clientPhs.length || partnerPhs.length) {
+    const clientSec  = state.sections.find(s=>s.id==='client');
+    const partnerSec = state.sections.find(s=>s.id==='partner');
+    const cc = state.collapsedSections.has('client');
+    const pc = state.collapsedSections.has('partner');
+
+    // Insert after general section in output — build separately and inject
+    html = `
+      <div class="sec-hdr" style="background:${clientSec?.color||'#1D4ED8'}" onclick="toggleSection('client')" data-sec="client">
+        Client &amp; Partner
+        <span class="sec-count">${clientPhs.length+partnerPhs.length} fields</span>
+        <span class="sec-toggle">${(cc&&pc)?'▶':'▼'}</span>
+      </div>
+      <div class="sec-body ${(cc&&pc)?'hidden':''}" id="sec-body-client-partner">
+        <div class="two-col">
+          <div>
+            <div class="col-lbl" style="color:${clientSec?.color||'var(--accent)'}">▸ Client</div>
+            ${clientPhs.map(ph => fieldRowHTML(ph, sectionOptions, true)).join('')}
+          </div>
+          <div class="col-div"></div>
+          <div>
+            <div class="col-lbl" style="color:${partnerSec?.color||'var(--accent2)'}">▸ Partner</div>
+            ${partnerPhs.map(ph => fieldRowHTML(ph, sectionOptions, true)).join('')}
+          </div>
+        </div>
+      </div>` + html;
+  }
+
+  el.innerHTML = html;
+
+  // Attach value listeners
+  state.placeholders.forEach(ph => {
+    const input = document.getElementById('val-'+ph.key);
+    if (input) {
+      input.value = state.values[ph.key] || '';
+      input.addEventListener('input', () => { state.values[ph.key] = input.value; });
+    }
+    const cb = document.getElementById('cb-'+ph.key);
+    if (cb) cb.addEventListener('change', () => { ph.enabled = cb.checked; syncFieldDisabled(ph); });
+    const sel = document.getElementById('sec-'+ph.key);
+    if (sel) { sel.value = ph.section||'other'; sel.addEventListener('change', () => { ph.section = sel.value; renderFieldForm(); }); }
+    syncFieldDisabled(ph);
+  });
+
+  // Drag and drop
+  initDragDrop();
+  updateBadge('fields', state.placeholders.length);
+}
+
+function fieldRowHTML(ph, sectionOptions, compact) {
+  const display = compact
+    ? ph.key.replace(/^client_/,'').replace(/^partner_/,'')
+    : ph.key;
+  const tagClass = ph.section==='client' ? '' : ph.section==='partner' ? 'partner' : ph.section==='other'?'other':'';
+  return `
+    <div class="field-row" draggable="true" data-key="${ph.key}" id="row-${ph.key}">
+      <span class="drag-handle" title="Drag to reorder">⠿</span>
+      <input class="cb" type="checkbox" id="cb-${ph.key}" ${ph.enabled?'checked':''}>
+      <span class="ph-tag ${tagClass}" title="${ph.key}">${display}</span>
+      <input class="field-input" type="text" id="val-${ph.key}" placeholder="enter value…">
+      <select class="sec-select" id="sec-${ph.key}">${sectionOptions}</select>
+      <button class="rm-btn" onclick="removePlaceholder('${ph.key}')">✕</button>
+    </div>`;
+}
+
+function syncFieldDisabled(ph) {
+  const input = document.getElementById('val-'+ph.key);
+  const cb    = document.getElementById('cb-'+ph.key);
+  if (input) input.disabled = !ph.enabled;
+}
+
+function toggleSection(id) {
+  // for client/partner combined header toggle both
+  if (id === 'client') {
+    const both = state.collapsedSections.has('client') && state.collapsedSections.has('partner');
+    if (both) { state.collapsedSections.delete('client'); state.collapsedSections.delete('partner'); }
+    else       { state.collapsedSections.add('client');   state.collapsedSections.add('partner'); }
+  } else {
+    state.collapsedSections.has(id) ? state.collapsedSections.delete(id) : state.collapsedSections.add(id);
+  }
+  renderFieldForm();
+}
+
+// ── Drag and drop within the flat placeholder list ──────────────────
+function initDragDrop() {
+  let dragKey = null;
+  document.querySelectorAll('.field-row[draggable]').forEach(row => {
+    row.addEventListener('dragstart', e => {
+      dragKey = row.dataset.key;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      document.querySelectorAll('.field-row').forEach(r => r.classList.remove('drag-over'));
+      dragKey = null;
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      document.querySelectorAll('.field-row').forEach(r => r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+    });
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragKey || dragKey === row.dataset.key) return;
+      const srcIdx  = state.placeholders.findIndex(p=>p.key===dragKey);
+      const dstIdx  = state.placeholders.findIndex(p=>p.key===row.dataset.key);
+      // also move to destination section
+      const dstSec  = state.placeholders[dstIdx].section;
+      const [item]  = state.placeholders.splice(srcIdx,1);
+      item.section  = dstSec;
+      const newDst  = state.placeholders.findIndex(p=>p.key===row.dataset.key);
+      state.placeholders.splice(newDst, 0, item);
+      renderFieldForm();
+    });
+  });
+}
+
+// ── Placeholder management ──────────────────────────────────────────
+function addPlaceholder() {
+  const raw = document.getElementById('new-ph-input').value.trim().replace(/^\{\{|\}\}$/g,'').trim();
+  if (!raw) return;
+  if (state.placeholders.find(p=>p.key===raw)) { alert(`{{${raw}}} already exists.`); return; }
+  state.placeholders.push({ key: raw, enabled: true, section: 'other' });
+  document.getElementById('new-ph-input').value = '';
+  renderFieldForm();
+}
+
+function removePlaceholder(key) {
+  state.placeholders = state.placeholders.filter(p=>p.key!==key);
+  delete state.values[key];
+  renderFieldForm();
+}
+
+function toggleAllFields(v) {
+  state.placeholders.forEach(p=>p.enabled=v);
+  renderFieldForm();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CATEGORIES
+// ═══════════════════════════════════════════════════════════════════
+function showAddCategory(editId=null) {
+  editingSectionId = editId;
+  const existing = editId ? state.sections.find(s=>s.id===editId) : null;
+  document.getElementById('modal-title').textContent = editId ? 'Edit Category' : 'Add Category';
+  document.getElementById('modal-desc').textContent  = editId ? 'Rename or recolour this category.' : 'Give your new category a name and pick a colour.';
+  document.getElementById('modal-cat-name').value    = existing?.name || '';
+  modalColor = existing?.color || COLORS[0];
+
+  const swatches = document.getElementById('modal-colors');
+  swatches.innerHTML = COLORS.map(c =>
+    `<div class="color-swatch ${c===modalColor?'selected':''}" style="background:${c}" onclick="selectColor('${c}')"></div>`
+  ).join('');
+
+  document.getElementById('modal-backdrop').classList.remove('hidden');
+  document.getElementById('modal-cat-name').focus();
+}
+
+function selectColor(c) {
+  modalColor = c;
+  document.querySelectorAll('.color-swatch').forEach(s => {
+    s.classList.toggle('selected', s.style.background === c || s.style.backgroundColor === c);
+  });
+}
+
+function saveCategory() {
+  const name = document.getElementById('modal-cat-name').value.trim();
+  if (!name) return;
+  if (editingSectionId) {
+    const sec = state.sections.find(s=>s.id===editingSectionId);
+    if (sec) { sec.name=name; sec.color=modalColor; }
+  } else {
+    const id = name.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'') + '_' + Date.now();
+    state.sections.push({ id, name, color: modalColor });
+  }
+  closeModal();
+  renderFieldForm();
+}
+
+function closeModal() {
+  document.getElementById('modal-backdrop').classList.add('hidden');
+  editingSectionId = null;
+}
+
+document.getElementById('modal-backdrop').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// SAVE / LOAD JSON
+// ═══════════════════════════════════════════════════════════════════
+function downloadJSON(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+function uploadJSON(callback) {
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.json';
+  inp.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = ev => { try { callback(JSON.parse(ev.target.result)); } catch(e) { alert('Invalid JSON file.'); } };
+    r.readAsText(file);
+  };
+  inp.click();
+}
+
+function saveValues() {
+  downloadJSON(state.values, 'values.json');
+}
+function loadValues() {
+  uploadJSON(data => {
+    Object.assign(state.values, data);
+    renderFieldForm();
+  });
+}
+function resetValues() {
+  if (!confirm('Clear all entered values? Placeholders will be kept.')) return;
+  state.values = {};
+  renderFieldForm();
+}
+
+function savePlaceholders() {
+  downloadJSON({
+    placeholders: state.placeholders.map(p=>({ key:p.key, section:p.section, enabled:p.enabled }))
+  }, 'placeholders.json');
+}
+function loadPlaceholders() {
+  uploadJSON(data => {
+    const list = Array.isArray(data) ? data : (data.placeholders || []);
+    list.forEach(item => {
+      const key     = typeof item === 'string' ? item : item.key;
+      const section = typeof item === 'object' ? (item.section||'other') : 'other';
+      const enabled = typeof item === 'object' ? (item.enabled!==false) : true;
+      if (!state.placeholders.find(p=>p.key===key)) {
+        state.placeholders.push({ key, section, enabled });
+      }
+    });
+    renderFieldForm();
+  });
+}
+
+function saveSections() {
+  downloadJSON({ sections: state.sections }, 'sections.json');
+}
+function loadSections() {
+  uploadJSON(data => {
+    const list = data.sections || data;
+    if (Array.isArray(list)) {
+      // merge: add new, update existing
+      list.forEach(s => {
+        const existing = state.sections.find(x=>x.id===s.id);
+        if (existing) { existing.name=s.name; existing.color=s.color; }
+        else state.sections.push(s);
+      });
+      renderFieldForm();
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MERGE & DOWNLOAD
+// ═══════════════════════════════════════════════════════════════════
+function updateStats() {
+  const activeFiles  = state.files.filter(f=>f.enabled).length;
+  const activeFields = state.placeholders.filter(p=>p.enabled).length;
+  const skipped      = state.files.filter(f=>!f.enabled).length;
+  document.getElementById('stat-files').textContent   = activeFiles;
+  document.getElementById('stat-fields').textContent  = activeFields;
+  document.getElementById('stat-skipped').textContent = skipped;
+}
+
+function log(msg, cls='') {
+  const el = document.getElementById('run-log');
+  el.innerHTML += `<span class="${cls}">${msg}</span>\n`;
+  el.scrollTop = el.scrollHeight;
+}
+
+async function runMerge() {
+  updateStats();
+  const activeFiles  = state.files.filter(f=>f.enabled);
+  const activeValues = {};
+  state.placeholders.filter(p=>p.enabled).forEach(p => {
+    activeValues[p.key] = state.values[p.key] || '';
+  });
+
+  if (!activeFiles.length) { alert('No files are checked. Enable at least one file on the Files tab.'); return; }
+
+  document.getElementById('run-log').innerHTML = '';
+  log(`Starting merge — ${activeFiles.length} file(s), ${Object.keys(activeValues).length} active field(s)`, 'info');
+  log('─'.repeat(54), 'dim');
+
+  // skipped
+  state.files.filter(f=>!f.enabled).forEach(f => log(`  –  ${f.name}  (skipped)`, 'skip'));
+
+  const zip = new JSZip();
+  let ok = 0, err = 0;
+
+  for (const f of activeFiles) {
+    try {
+      let merged;
+      if (f.ext === 'docx') merged = await mergeDocx(f.data, activeValues);
+      else                   merged = await mergeXlsx(f.data, activeValues);
+      zip.file(f.name, merged);
+      log(`  ✓  ${f.name}`, 'ok');
+      ok++;
+    } catch(e) {
+      log(`  ✗  ${f.name}  →  ${e.message}`, 'err');
+      err++;
+    }
+  }
+
+  log('─'.repeat(54), 'dim');
+  log(`Done  ${ok} merged,  ${err} failed`, 'info');
+
+  if (ok > 0) {
+    if (ok === 1) {
+      // single file — download directly
+      const fname = activeFiles.find(f=>!err).name;
+      const content = zip.file(fname);
+      if (content) {
+        const blob = new Blob([await content.async('arraybuffer')], {type:'application/octet-stream'});
+        saveAs(blob, fname);
+      }
+    } else {
+      // multiple files — zip
+      const blob = await zip.generateAsync({type:'blob'});
+      saveAs(blob, 'merged_files.zip');
+    }
+    log(`\n📥 Download started`, 'ok');
+  }
+}
+
+// ── DOCX merge ────────────────────────────────────────────────────
+
+// Word fragments {{placeholders}} across XML runs in many ways:
+//   - <w:proofErr> spell-check tags inserted between runs
+//   - {{ braces split into separate runs: <w:t>{</w:t><w:r><w:t>{</w:t>
+//   - Key name split across multiple runs: partner_ / current_ / balance
+//   - Combinations of all the above
+//
+// Strategy: paragraph-level reconstruction
+//   For each <w:p> containing a {, concatenate all <w:t> text, check for {{key}},
+//   and if found collapse all <w:r> runs into one (reusing the first run's rPr
+//   formatting) containing the fully-replaced text. Untouched paragraphs are
+//   left completely unchanged.
+
+function mergeDocxXml(xml, values) {
+
+  // Pre-pass: strip <w:proofErr .../> — spell-check markers Word inserts between runs.
+  // They carry no content and Word regenerates them on open.
+  xml = xml.replace(/<w:proofErr[^/]*\/>/g, '');
+
+  // Paragraph-level pass: handle all split-placeholder patterns
+  xml = xml.replace(/(<w:p[ >][\s\S]*?<\/w:p>)/g, (para) => {
+    if (!para.includes('{')) return para;
+
+    // Concatenate all <w:t> text in reading order
+    const textParts = [];
+    const tRe = /<w:t[^>]*>([^<]*)<\/w:t>/g;
+    let tm;
+    while ((tm = tRe.exec(para)) !== null) textParts.push(tm[1]);
+    const fullText = textParts.join('');
+
+    // Only proceed if there's a resolvable placeholder in the concatenated text
+    if (!(/\{\{[a-z][a-z0-9_]*\}\}/i.test(fullText))) return para;
+    const hasKnownKey = Object.keys(values).some(k => fullText.includes(`{{${k}}}`));
+    if (!hasKnownKey) return para;
+
+    // Replace all known placeholders in the assembled text
+    const replaced = fullText.replace(/\{\{([a-z][a-z0-9_]*)\}\}/gi, (m, key) =>
+      key in values ? escapeXml(String(values[key])) : m
+    );
+
+    // Extract rPr formatting from the first run
+    const firstRunMatch = para.match(/<w:r[ >][\s\S]*?<\/w:r>/);
+    if (!firstRunMatch) return para;
+
+    const rPrMatch = firstRunMatch[0].match(/(<w:rPr[\s\S]*?<\/w:rPr>)/);
+    const rPr = rPrMatch ? rPrMatch[1] : '';
+
+    // Build a clean replacement run (no rsid attributes needed on <w:r>)
+    const needsSpace = replaced !== replaced.trim();
+    const spaceAttr = needsSpace ? ' xml:space="preserve"' : '';
+    const newRun = `<w:r>${rPr}<w:t${spaceAttr}>${replaced}</w:t></w:r>`;
+
+    // Swap all <w:r> blocks: first gets the new content, rest are deleted
+    let inserted = false;
+    return para.replace(/<w:r[ >][\s\S]*?<\/w:r>/g, (runMatch) => {
+      if (!inserted) { inserted = true; return newRun; }
+      return '';
+    });
+  });
+
+  // Final pass: catch any intact {{key}} outside paragraphs (e.g. table cells)
+  xml = xml.replace(/\{\{([a-z][a-z0-9_]*)\}\}/gi, (match, key) => {
+    return key in values ? escapeXml(String(values[key])) : match;
+  });
+
+  return xml;
+}
+// Scan DOCX XML for all placeholder keys, handling all split-run patterns
+function extractDocxPlaceholders(xml) {
+  const keys = new Set();
+  // Match {{ ... }} allowing XML tags inside - strip tags to get key
+  const re = /\{\{((?:[^}<>]|<[^>]+>)*?)\}\}/g;
+  let m;
+  while ((m = re.exec(xml)) !== null) {
+    const key = m[1].replace(/<[^>]+>/g, '').trim();
+    if (/^[a-z][a-z0-9_]*$/i.test(key)) keys.add(key);
+  }
+  return [...keys];
+}
+
+async function scanDocx(buffer) {
+  const zip = await JSZip.loadAsync(buffer);
+  const xml = await zip.file('word/document.xml').async('string');
+  return extractDocxPlaceholders(xml);
+}
+
+async function mergeDocx(buffer, values) {
+  const zip = await JSZip.loadAsync(buffer);
+  const docXml = await zip.file('word/document.xml').async('string');
+  zip.file('word/document.xml', mergeDocxXml(docXml, values));
+
+  // also merge in headers/footers
+  for (const fname of Object.keys(zip.files)) {
+    if (fname.match(/word\/(header|footer)\d*\.xml/)) {
+      const xml = await zip.file(fname).async('string');
+      zip.file(fname, mergeDocxXml(xml, values));
+    }
+  }
+  return zip.generateAsync({type:'arraybuffer'});
+}
+// ── XLSX merge ────────────────────────────────────────────────────
+// Try to parse a value as a clean number (strip $, commas, %, spaces)
+function toNumeric(str) {
+  const cleaned = String(str).trim().replace(/[$,\s]/g, '').replace(/%$/, '');
+  if (cleaned === '' || cleaned === '-') return null;
+  const n = Number(cleaned);
+  return isFinite(n) ? n : null;
+}
+
+// Extract all <si> text content from sharedStrings.xml as an array
+function parseSharedStrings(xml) {
+  const strings = [];
+  const siRe = /<si>([\s\S]*?)<\/si>/g;
+  const tRe  = /<t[^>]*>([^<]*)<\/t>/g;
+  let si;
+  while ((si = siRe.exec(xml)) !== null) {
+    let text = '';
+    let t;
+    tRe.lastIndex = 0;
+    const inner = si[1];
+    while ((t = tRe.exec(inner)) !== null) text += t[1];
+    strings.push(text);
+  }
+  return strings;
+}
+
+async function mergeXlsx(buffer, values) {
+  const zip = await JSZip.loadAsync(buffer);
+
+  // 1. Parse shared strings to build index → text map
+  let sharedStrings = [];
+  // Track which shared string indices are pure placeholders mapping to numbers
+  // so we can rewrite those cells as numeric in the sheet XML
+  const numericSsIdx = {}; // index -> numeric value  (for cells to rewrite as numbers)
+  const textSsIdx    = {}; // index -> string value   (for cells to keep as strings)
+
+  const ssFile = zip.file('xl/sharedStrings.xml');
+  if (ssFile) {
+    let ssXml = await ssFile.async('string');
+    sharedStrings = parseSharedStrings(ssXml);
+
+    sharedStrings.forEach((text, idx) => {
+      // Check if this shared string is a pure placeholder (the whole string is {{key}})
+      const m = text.match(/^\{\{([^}]+)\}\}$/);
+      if (m && m[1] in values) {
+        const num = toNumeric(values[m[1]]);
+        if (num !== null) {
+          numericSsIdx[idx] = num;
+        } else {
+          textSsIdx[idx] = values[m[1]];
+        }
+      }
+    });
+
+    // Replace placeholders in shared strings (for text values and mixed strings)
+    ssXml = replacePlaceholders(ssXml, values);
+    zip.file('xl/sharedStrings.xml', ssXml);
+  }
+
+  // 2. Process worksheet XML — rewrite numeric/text shared-string cells
+  for (const fname of Object.keys(zip.files)) {
+    if (fname.match(/xl\/worksheets\/sheet\d+\.xml/)) {
+      let xml = await zip.file(fname).async('string');
+      xml = rewriteSharedStringCells(xml, numericSsIdx, textSsIdx);
+      // Also handle inlineStr and t="str" cells
+      xml = replaceInlineCells(xml, values);
+      zip.file(fname, xml);
+    }
+  }
+
+  // 3. Delete calcChain.xml — Excel rebuilds it safely on open.
+  //    Without this, Excel may re-evaluate formula caches and convert
+  //    our correctly-written numeric <v> values back to text.
+  zip.remove('xl/calcChain.xml');
+
+  return zip.generateAsync({type:'arraybuffer'});
+}
+
+// Rewrite shared-string cells (t="s") where the string index maps to a
+// numeric or plain-text replacement, converting them to proper value cells
+function rewriteSharedStringCells(xml, numericIdx, textIdx) {
+  // Match cells with t="s": <c r="B2" s="4" t="s"><v>3</v></c>
+  return xml.replace(
+    /<c([^>]*?)t="s"([^>]*)><v>(\d+)<\/v><\/c>/g,
+    (match, pre, post, idxStr) => {
+      const idx = parseInt(idxStr, 10);
+      if (idx in numericIdx) {
+        // Remove t="s", keep style (s="N") if present, insert numeric value
+        const styleMatch = (pre + post).match(/s="([^"]+)"/);
+        const style = styleMatch ? ` s="${styleMatch[1]}"` : '';
+        const ref   = (pre + post).match(/r="([^"]+)"/);
+        const rAttr = ref ? ` r="${ref[1]}"` : '';
+        return `<c${rAttr}${style}><v>${numericIdx[idx]}</v></c>`;
+      }
+      if (idx in textIdx) {
+        // Keep as string cell but with inline value instead of shared string ref
+        const styleMatch = (pre + post).match(/s="([^"]+)"/);
+        const style = styleMatch ? ` s="${styleMatch[1]}"` : '';
+        const ref   = (pre + post).match(/r="([^"]+)"/);
+        const rAttr = ref ? ` r="${ref[1]}"` : '';
+        return `<c${rAttr}${style} t="inlineStr"><is><t>${escapeXml(textIdx[idx])}</t></is></c>`;
+      }
+      return match;
+    }
+  );
+}
+
+// Handle inlineStr and t="str" cells with placeholders
+function replaceInlineCells(xml, values) {
+  // inlineStr: <c ... t="inlineStr"><is><t>{{key}}</t></is></c>
+  xml = xml.replace(
+    /<c([^>]*?)t="inlineStr"([^>]*)><is><t>\{\{([^}]+)\}\}<\/t><\/is><\/c>/g,
+    (match, pre, post, key) => {
+      if (!(key in values)) return match;
+      const num = toNumeric(values[key]);
+      const attrs = pre + post;
+      const styleMatch = attrs.match(/[\s]s="([^"]+)"/);
+      const style = styleMatch ? ` s="${styleMatch[1]}"` : '';
+      const ref   = attrs.match(/[\s]r="([^"]+)"/);
+      const rAttr = ref ? ` r="${ref[1]}"` : '';
+      if (num !== null) return `<c${rAttr}${style}><v>${num}</v></c>`;
+      return `<c${rAttr}${style} t="inlineStr"><is><t>${escapeXml(values[key])}</t></is></c>`;
+    }
+  );
+
+  // t="str" — two sub-cases:
+  //
+  // Case A: quoted-placeholder formula  ="{{key}}"
+  //   Excel XML: <c r="B6" s="4" t="str"><f>&quot;{{key}}&quot;</f><v>{{key}}</v></c>
+  //   Action: strip the formula entirely and write a plain numeric/string cell.
+  //
+  // Case B: real cross-sheet reference whose cached <v> is a placeholder
+  //   Excel XML: <c r="B2" s="4" t="str"><f>'Sheet1'!B6</f><v>{{key}}</v></c>
+  //   Action: keep the <f> tag intact; update the cached <v> and remove t="str"
+  //           for numeric results so Excel won't display them as text.
+  xml = xml.replace(
+    /<c([^>]*?)t="str"([^>]*)>(<f>([^<]*)<\/f>)?<v>([^<]*\{\{([^}]+)\}\}[^<]*)<\/v><\/c>/g,
+    (match, pre, post, fTag, fContent, vContent, key) => {
+      if (!(key in values)) return match;
+      const num   = toNumeric(values[key]);
+      const attrs = pre + post;
+      const styleMatch = attrs.match(/[\s]s="([^"]+)"/);
+      const style = styleMatch ? ` s="${styleMatch[1]}"` : '';
+      const ref   = attrs.match(/[\s]r="([^"]+)"/);
+      const rAttr = ref ? ` r="${ref[1]}"` : '';
+
+      // Detect whether the formula is just a quoted placeholder like &quot;{{key}}&quot;
+      const isQuotedPlaceholder = !fContent ||
+        /^(&quot;|")?\{\{[^}]+\}\}(&quot;|")?$/.test(fContent.trim());
+
+      if (isQuotedPlaceholder) {
+        // Case A — quoted placeholder: remove formula, write proper value cell
+        if (num !== null) return `<c${rAttr}${style}><v>${num}</v></c>`;
+        return `<c${rAttr}${style} t="inlineStr"><is><t>${escapeXml(values[key])}</t></is></c>`;
+      } else {
+        // Case B — real cross-sheet formula: preserve <f>, update cached <v> only
+        if (num !== null) {
+          // Drop t="str" so Excel doesn't force text rendering on the cached value
+          return `<c${rAttr}${style}>${fTag}<v>${num}</v></c>`;
+        }
+        return `<c${rAttr}${style} t="str">${fTag}<v>${escapeXml(values[key])}</v></c>`;
+      }
+    }
+  );
+
+  return xml;
+}
+
+function replacePlaceholders(text, values) {
+  return text.replace(PH_RE, (match, key) => {
+    return key in values ? escapeXml(values[key]) : match;
+  });
+}
+
+function escapeXml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&apos;');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// BADGES
+// ═══════════════════════════════════════════════════════════════════
+function updateBadge(tab, n) {
+  const el = document.getElementById('badge-'+tab);
+  if (el) el.textContent = n;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+// SOA EXPORT
+// ═══════════════════════════════════════════════════════════════════
+let soaPlaceholders = {}; // {key: value}
+let soaStrategies   = []; // [{heading, who_for, type, strategy, our_recommendation, why_appropriate, what_to_consider, implementation, outcome, alt_strat_details, ...}]
+
+function soaAddPh() {
+  const key = document.getElementById('soa-ph-key').value.trim().replace(/[{}]/g,'');
+  const val = document.getElementById('soa-ph-val').value;
+  if (!key) return;
+  soaPlaceholders[key] = val;
+  document.getElementById('soa-ph-key').value = '';
+  document.getElementById('soa-ph-val').value = '';
+  soaRenderPhs();
+}
+
+function soaRenderPhs() {
+  const el = document.getElementById('soa-ph-list');
+  if (!Object.keys(soaPlaceholders).length) { el.innerHTML = ''; return; }
+  el.innerHTML = Object.entries(soaPlaceholders).map(([k,v]) => `
+    <div class="soa-ph-row">
+      <span class="ph-tag">{{${k}}}</span>
+      <input class="field-input" type="text" value="${v.replace(/"/g,'&quot;')}" oninput="soaPlaceholders['${k}']=this.value" style="max-width:300px">
+      <button class="rm-btn" onclick="delete soaPlaceholders['${k}'];soaRenderPhs()">✕</button>
+    </div>`).join('');
+}
+
+function soaAddStrategy() {
+  soaStrategies.push({
+    heading:'', who_for:'', type:'', strategy:'',
+    our_recommendation:'', why_appropriate:'', what_to_consider:'',
+    implementation:'', outcome:'', alt_strat_details:'',
+    policy_ownership:'', waiting_benefit_period:'', premium_type:'',
+    occupation_type:'', cancellable:'', notes:''
+  });
+  soaRenderStrategies();
+}
+
+function soaRenderStrategies() {
+  const el = document.getElementById('soa-strategies');
+  if (!soaStrategies.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px 2px">No strategies yet — click + Add Strategy above.</div>';
+    return;
+  }
+  el.innerHTML = soaStrategies.map((s,i) => `
+    <div class="soa-strat">
+      <div class="soa-strat-hdr">
+        Strategy ${i+1}
+        <span style="font-size:11px;color:var(--muted);font-weight:400">${s.heading||'(untitled)'}</span>
+        <button class="rm-btn" style="margin-left:auto" onclick="soaStrategies.splice(${i},1);soaRenderStrategies()">✕ Remove</button>
+      </div>
+      <div class="soa-strat-grid">
+        <div class="soa-strat-field"><label>Heading</label><input type="text" value="${esc(s.heading)}" oninput="soaStrategies[${i}].heading=this.value;soaRenderStratHeading(${i},this.value)" placeholder="e.g. Life Insurance"></div>
+        <div class="soa-strat-field"><label>Who For</label><input type="text" value="${esc(s.who_for)}" oninput="soaStrategies[${i}].who_for=this.value" placeholder="Client / Partner / Joint"></div>
+        <div class="soa-strat-field"><label>Strategy Type</label><input type="text" value="${esc(s.type)}" oninput="soaStrategies[${i}].type=this.value" placeholder="Insurance / Superannuation..."></div>
+        <div class="soa-strat-field"><label>Strategy Selection</label><input type="text" value="${esc(s.strategy)}" oninput="soaStrategies[${i}].strategy=this.value" placeholder="Match Xplan dropdown"></div>
+        <div class="soa-strat-field wide"><label>Our Recommendation</label><textarea rows="4" oninput="soaStrategies[${i}].our_recommendation=this.value" placeholder="Alt+Enter for line breaks. **bold** ~~green~~ [TABLE]...[/TABLE]">${esc(s.our_recommendation)}</textarea></div>
+        <div class="soa-strat-field wide"><label>Why Our Advice Is Appropriate</label><textarea rows="3" oninput="soaStrategies[${i}].why_appropriate=this.value">${esc(s.why_appropriate)}</textarea></div>
+        <div class="soa-strat-field wide"><label>What You Need to Consider</label><textarea rows="3" oninput="soaStrategies[${i}].what_to_consider=this.value">${esc(s.what_to_consider)}</textarea></div>
+        <div class="soa-strat-field wide"><label>Implementation</label><textarea rows="3" oninput="soaStrategies[${i}].implementation=this.value">${esc(s.implementation)}</textarea></div>
+        <div class="soa-strat-field wide"><label>Outcome</label><textarea rows="3" oninput="soaStrategies[${i}].outcome=this.value">${esc(s.outcome)}</textarea></div>
+        <div class="soa-strat-field wide"><label>Alternative Strategy Details (bullet points)</label><textarea rows="3" oninput="soaStrategies[${i}].alt_strat_details=this.value" placeholder="• Alternative 1&#10;• Alternative 2">${esc(s.alt_strat_details)}</textarea></div>
+        <div class="soa-strat-field"><label>Policy Ownership (insurance)</label><textarea rows="2" oninput="soaStrategies[${i}].policy_ownership=this.value">${esc(s.policy_ownership)}</textarea></div>
+        <div class="soa-strat-field"><label>Waiting &amp; Benefit Period</label><textarea rows="2" oninput="soaStrategies[${i}].waiting_benefit_period=this.value">${esc(s.waiting_benefit_period)}</textarea></div>
+        <div class="soa-strat-field"><label>Premium Type</label><textarea rows="2" oninput="soaStrategies[${i}].premium_type=this.value">${esc(s.premium_type)}</textarea></div>
+        <div class="soa-strat-field"><label>Occupation Type</label><textarea rows="2" oninput="soaStrategies[${i}].occupation_type=this.value">${esc(s.occupation_type)}</textarea></div>
+        <div class="soa-strat-field wide"><label>Notes (internal)</label><input type="text" value="${esc(s.notes)}" oninput="soaStrategies[${i}].notes=this.value"></div>
+      </div>
+    </div>`).join('');
+}
+
+function soaRenderStratHeading(i, val) {
+  // update subtitle without full re-render
+  const hdrs = document.querySelectorAll('.soa-strat-hdr');
+  if (hdrs[i]) {
+    const span = hdrs[i].querySelector('span');
+    if (span) span.textContent = val || '(untitled)';
+  }
+}
+
+function esc(v) {
+  return (v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Apply {{placeholders}} substitution to a string
+function applyPhs(text) {
+  if (!text) return '';
+  return text.replace(/\{\{([^}]+)\}\}/g, (m, key) => soaPlaceholders[key] !== undefined ? soaPlaceholders[key] : m);
+}
+
+// ── Export to Excel ──────────────────────────────────────────────
+async function soaExport() {
+  // We need SheetJS to write xlsx — load it if not already loaded
+  if (typeof XLSX === 'undefined') {
+    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+  }
+
+  const soaId    = document.getElementById('soa_id').value.trim() || 'soa_export';
+  const entityId = document.getElementById('client_entity_id').value.trim();
+
+  // Collect all SOA-level text fields
+  const soaTextFields = [
+    'scope_in_text_insurance','scope_in_text_investments','scope_in_text_super',
+    'scope_in_text_debt','scope_in_text_retirement','scope_in_text_estate',
+    'scope_in_text_cashflow','scope_in_text_social',
+    'ors_text','implementation_text','important_relationships_text'
+  ];
+
+  const soaRow = { soa_id: soaId, client_entity_id: entityId };
+  soaTextFields.forEach(id => {
+    const el = document.getElementById(id);
+    soaRow[id] = el ? applyPhs(el.value) : '';
+  });
+
+  // Build strategy rows
+  const stratRows = soaStrategies.map((s, i) => {
+    const row = { soa_id: soaId, strategy_number: i + 1 };
+    Object.keys(s).forEach(k => { row[k] = applyPhs(s[k]); });
+    return row;
+  });
+
+  // Build workbook
+  const wb = XLSX.utils.book_new();
+
+  // SOA sheet
+  const soaWs = XLSX.utils.json_to_sheet([soaRow]);
+  XLSX.utils.book_append_sheet(wb, soaWs, 'SOA');
+
+  // Strategies sheet
+  if (stratRows.length) {
+    const stratWs = XLSX.utils.json_to_sheet(stratRows);
+    XLSX.utils.book_append_sheet(wb, stratWs, 'Strategies');
+  } else {
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{}]), 'Strategies');
+  }
+
+  // Empty placeholder sheets for products and fees
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{}]), 'Investment Products');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{}]), 'Fee Disclosure');
+
+  // Download
+  XLSX.writeFile(wb, `${soaId}_data.xlsx`);
+  log(`📥 Exported ${soaId}_data.xlsx — ${stratRows.length} strategies`, 'ok');
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+// ── Save / Load draft ────────────────────────────────────────────
+function soaSave() {
+  const draft = {
+    soa_id: document.getElementById('soa_id').value,
+    client_entity_id: document.getElementById('client_entity_id').value,
+    placeholders: soaPlaceholders,
+    strategies: soaStrategies,
+    fields: {}
+  };
+  ['scope_in_text_insurance','scope_in_text_investments','scope_in_text_super',
+   'scope_in_text_debt','scope_in_text_retirement','scope_in_text_estate',
+   'scope_in_text_cashflow','scope_in_text_social',
+   'ors_text','implementation_text','important_relationships_text'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) draft.fields[id] = el.value;
+  });
+  downloadJSON(draft, `${draft.soa_id||'soa'}_draft.json`);
+}
+
+function soaLoad() {
+  uploadJSON(draft => {
+    if (draft.soa_id) document.getElementById('soa_id').value = draft.soa_id;
+    if (draft.client_entity_id) document.getElementById('client_entity_id').value = draft.client_entity_id;
+    if (draft.placeholders) { soaPlaceholders = draft.placeholders; soaRenderPhs(); }
+    if (draft.strategies)   { soaStrategies   = draft.strategies;   soaRenderStrategies(); }
+    if (draft.fields) {
+      Object.entries(draft.fields).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+      });
+    }
+  });
+}
+
+function soaClear() {
+  if (!confirm('Clear all SOA export data?')) return;
+  soaPlaceholders = {};
+  soaStrategies   = [];
+  soaRenderPhs();
+  soaRenderStrategies();
+  ['soa_id','client_entity_id','scope_in_text_insurance','scope_in_text_investments',
+   'scope_in_text_super','scope_in_text_debt','scope_in_text_retirement','scope_in_text_estate',
+   'scope_in_text_cashflow','scope_in_text_social','ors_text','implementation_text',
+   'important_relationships_text'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+}
+
+// Init SOA panel
+soaRenderStrategies();
+
+// ── Init ──────────────────────────────────────────────────────────
+renderFileList();
+renderFieldForm();
+</script>
+</body>
+</html>
