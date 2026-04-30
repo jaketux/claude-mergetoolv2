@@ -323,13 +323,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
           <div class="soa-field"><label>Client Entity ID</label><input type="text" id="client_entity_id" placeholder="e.g. 390263"></div>
         </div>
 
-        <!-- Placeholders -->
-        <div class="soa-section-hdr" style="background:#2E75B6;margin-top:14px">Placeholders (from Fill Fields tab)</div>
-        <div class="panel-sub" style="margin:4px 0 6px">Define <strong style="color:var(--accent)">{{placeholders}}</strong> in the ✏️ Fill Fields tab — they substitute automatically in all rich text fields below.</div>
-        <div id="soa-ph-preview" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:var(--s2);border:1px solid var(--border);border-radius:5px;min-height:34px;margin-bottom:6px">
-          <span style="color:var(--muted);font-size:11px;align-self:center" id="soa-ph-empty-msg">No placeholders defined yet.</span>
-        </div>
-        <button class="btn btn-grey btn-sm" onclick="switchTab('fields')">✏️ Go to Fill Fields →</button>
+        <!-- Placeholders hint -->
+        <div class="panel-sub" style="margin:4px 0 10px">Use <code style="color:var(--accent)">{{placeholder}}</code> anywhere in text fields. Manage in the <button class="btn btn-grey btn-sm" style="padding:1px 8px" onclick="switchTab('fields')">✏️ Fill Fields</button> tab. Active placeholders shown at the bottom of this tab ↓</div>
 
         <!-- ── SCOPE OF ADVICE ── -->
         <div class="soa-section-hdr" style="background:#1B4F72;margin-top:18px">Scope of Advice — Formatting</div>
@@ -602,6 +597,21 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:4px">
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_estate" > Estate Planning</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_aged_care" > Aged Care</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_funeral_bonds" > Funeral Bonds</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_trusts" > Trusts</label>
         </div>
+
+        <!-- ── PLACEHOLDER REFERENCE (collapsible) ── -->
+        <details id="soa-ph-ref" style="margin-top:16px;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+          <summary style="padding:8px 14px;background:var(--s2);cursor:pointer;font-family:Syne,sans-serif;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--text);display:flex;align-items:center;gap:8px;list-style:none">
+            <span>📋 Active Placeholders</span>
+            <span style="font-weight:400;color:var(--muted);font-size:10px;margin-left:4px">— click to expand for reference</span>
+          </summary>
+          <div style="padding:10px 14px;background:var(--s1)">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:8px">These placeholders will be substituted on export. Use the exact <code style="color:var(--accent)">{{key}}</code> syntax in any text field.</div>
+            <div id="soa-ph-preview" style="display:flex;flex-wrap:wrap;gap:6px;min-height:24px">
+              <span style="color:var(--muted);font-size:11px;align-self:center" id="soa-ph-empty-msg">No placeholders defined yet — go to Fill Fields tab to add them.</span>
+            </div>
+            <button class="btn btn-grey btn-sm" style="margin-top:8px" onclick="switchTab('fields')">✏️ Go to Fill Fields →</button>
+          </div>
+        </details>
 
       </div><!-- end panel-body -->
 
@@ -1780,15 +1790,25 @@ function soaLoad() {
     if (draft.soa_id)           document.getElementById('soa_id').value = draft.soa_id;
     if (draft.client_entity_id) document.getElementById('client_entity_id').value = draft.client_entity_id;
 
-    // Restore placeholders into Fill Fields state.values
+    // Restore placeholders into Fill Fields state
     if (draft.placeholders) {
-      Object.assign(state.values, draft.placeholders);
+      Object.entries(draft.placeholders).forEach(([key, val]) => {
+        // Add to state.values
+        state.values[key] = val;
+        // Add to state.placeholders if missing
+        if (!state.placeholders.find(p => p.key === key)) {
+          state.placeholders.push({ key, enabled: true, section: guessSection(key) });
+        } else {
+          // Make sure it's enabled
+          const p = state.placeholders.find(p => p.key === key);
+          if (p) p.enabled = true;
+        }
+      });
+      // Re-render Fill Fields so val- inputs exist, then update them
+      renderFieldForm();
       Object.entries(draft.placeholders).forEach(([key, val]) => {
         const el = document.getElementById('val-' + key);
         if (el) el.value = val;
-        if (!state.placeholders.find(p => p.key === key)) {
-          state.placeholders.push({ key, enabled: true, section: guessSection(key) });
-        }
       });
       soaRefreshPhPreview();
     }
@@ -1801,6 +1821,8 @@ function soaLoad() {
     if (draft.fields) {
       soaSetAllFields(draft.fields);
     }
+    // Always refresh preview at end of load
+    soaRefreshPhPreview();
   });
 }
 
