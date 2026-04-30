@@ -1773,13 +1773,7 @@ function soaLoad() {
     if (draft.feeInputs)     Object.entries(draft.feeInputs).forEach(([id,v]) => { const el = document.getElementById(id); if (el) el.value = v; });
     if (draft.feeCheckboxes) Object.entries(draft.feeCheckboxes).forEach(([id,v]) => { const el = document.getElementById(id); if (el) el.checked = v; });
     if (draft.fields) {
-      Object.entries(draft.fields).forEach(([id, val]) => {
-        const el = document.getElementById(id);
-        if (el) {
-          el.value = val;
-  
-        }
-      });
+      soaSetAllFields(draft.fields);
     }
   });
 }
@@ -1801,7 +1795,19 @@ function soaClear() {
   });
   ['client','partner','joint','linked'].forEach(k => { const cb = document.getElementById('fee_who_' + k); if (cb) cb.checked = true; });
 
-  ['soa_id','client_entity_id',
+  // Clear all text/select fields
+  ['soa_id','client_entity_id','date_of_soa',
+   'title_page_image','section_break_images','soa_colour_scheme','soa_footer',
+   'naming_convention','executive_summary','soa_type',
+   'include_coverletter','include_custom_cover_letter','advice_signature_options',
+   'include_goals_icons','include_implementation_page','soa_incomplete_information',
+   'current_scenario_place','include_product_recommendations',
+   'include_custom_scope','include_scope_reasons','include_scope_out_section',
+   'risk_profile_client','risk_profile_partner','risk_profile_joint',
+   'rr_source','ws_source',
+   'soa_funding_insurance','include_xtools_chart','supporting_calcs','retirement_analysis','bps_myg',
+   'replacing_investment','replacing_insurance','inc_fee_agg',
+   'charging_ors','include_educational_flyers','include_alt_products',
    'scope_in_text_insurance','scope_in_text_investments','scope_in_text_super',
    'scope_in_text_debt','scope_in_text_retirement','scope_in_text_estate',
    'scope_in_text_cashflow','scope_in_text_social',
@@ -1812,6 +1818,44 @@ function soaClear() {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+
+  // Reset checkboxes to defaults
+  const defaultChecked = ['module_rr','module_ws',
+    'rr_needs_analysis','rr_auto_gains','rr_alt_insurance','rr_auto_fee',
+    'rr_product_comparison','rr_replace_compare','rr_premium_comparison',
+    'rr_product_summary','rr_compare_diff','rr_compare_ratings','rr_pds',
+    'ws_product_table_full','ws_product_table_nozero','ws_product_table_fee_full',
+    'ws_product_table_fee_nozero','ws_inv_rec','ws_asset_alloc','ws_super_comparison',
+    'ws_alt_products','ws_auto_fee','ws_auto_fee_detail','ws_tables_final_bal',
+    'ws_tables_like_for_like','ws_pds',
+    'fee_who_client','fee_who_partner','fee_who_joint','fee_who_linked'];
+
+  const defaultUnchecked = ['re_client','re_partner','re_joint','re_linked',
+    'scope_in_insurance','scope_in_investments','scope_in_super','scope_in_debt',
+    'scope_in_retirement','scope_in_estate','scope_in_cashflow','scope_in_social',
+    'scope_out_insurance','scope_out_investments','scope_out_super','scope_out_debt',
+    'scope_out_retirement','scope_out_estate','scope_out_cashflow','scope_out_social',
+    'module_portfolio','module_xtools',
+    'insur_premiums_increase','insur_higher_policy_fees',
+    'insur_tpd_super','insur_tpd_own','insur_ip_super','insur_cashflow',
+    'insur_uw_loading','insur_uw_excl','insur_cancelled','insur_cheaper',
+    'insur_preexisting','insur_suicide','insur_auto_accept','insur_waiting',
+    'insur_trauma','insur_no_loss','insur_disability','insur_cgt','insur_no_conseq',
+    'impl_pds','impl_forms','impl_steps','impl_id_docs','impl_follow_plan','impl_portfolio',
+    'flyer_debt_mgmt','flyer_debt_recycling','flyer_redundancy','flyer_salary_packaging','flyer_budget',
+    'flyer_dca','flyer_etf','flyer_gearing','flyer_income_stream','flyer_inv_bond',
+    'flyer_inv_risks','flyer_inv_general','flyer_mda','flyer_margin_lending','flyer_sma',
+    'flyer_abp','flyer_annuities','flyer_super','flyer_tbc_index','flyer_tbc','flyer_ttr',
+    'flyer_smsf','flyer_smsf_strategy','flyer_smsf_lrba',
+    'flyer_ncc','flyer_cc','flyer_downsizer','flyer_recontrib','flyer_salary_sac','flyer_spouse_contrib',
+    'flyer_biz_expense','flyer_biz_protection','flyer_personal_ins',
+    'flyer_age_pension','flyer_carer_allowance','flyer_carer_payment','flyer_centrelink',
+    'flyer_seniors_card','flyer_dsp','flyer_dva','flyer_ftb','flyer_gifting','flyer_granny_flat','flyer_jobseeker',
+    'flyer_cgt','flyer_small_biz_tax','flyer_taxation',
+    'flyer_estate','flyer_aged_care','flyer_funeral_bonds','flyer_trusts'];
+
+  defaultChecked.forEach(id => { const el = document.getElementById(id); if (el) el.checked = true; });
+  defaultUnchecked.forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
 }
 
 // ── Granular save / load ────────────────────────────────────────
