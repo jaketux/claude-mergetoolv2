@@ -310,188 +310,281 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
         <div class="log" id="run-log">Ready. Configure files and fields then click Run Merge.</div>
       </div>
     </div>
-<!-- ══ SOA EXPORT PANEL ══ -->
+    <!-- ══ SOA EXPORT PANEL ══ -->
     <div class="panel" id="panel-soa">
       <div class="panel-body">
         <div class="panel-title">SOA Data Export</div>
-        <div class="panel-sub">Fill in the fields below. Placeholders like <span style="font-family:monospace;color:var(--accent)">{{client_name}}</span> in your text will be replaced automatically. Click Export to download a filled soa_data_template.xlsx.</div>
+        <div class="panel-sub">Fill in all fields for this SOA. Use <code style="color:var(--accent)">{{placeholder}}</code> anywhere in text fields. Hit Save to store as a reusable template JSON, then Export to generate the Excel for the filler script.</div>
 
-        <!-- SOA ID + Entity -->
-        <div class="soa-section-hdr" style="background:#1F3864">Meta</div>
+        <!-- Meta -->
+        <div class="soa-section-hdr" style="background:#1F3864;margin-top:8px">Meta</div>
         <div class="soa-grid">
           <div class="soa-field"><label>SOA ID</label><input type="text" id="soa_id" placeholder="e.g. smith_2026"></div>
           <div class="soa-field"><label>Client Entity ID</label><input type="text" id="client_entity_id" placeholder="e.g. 390263"></div>
         </div>
 
         <!-- Placeholders -->
-        <div class="soa-section-hdr" style="background:#2E75B6;margin-top:14px">Client Placeholders</div>
-        <div class="panel-sub" style="margin:6px 0 8px">Define {{placeholders}} here — they will be substituted in all rich text fields below before export.</div>
-        <div id="soa-ph-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
-        <div class="add-bar" style="margin-bottom:0">
-          <span style="font-weight:600;color:var(--muted);font-size:12px">Add placeholder:</span>
-          <div class="mono-wrap">
-            <span class="brace">{{</span>
-            <input type="text" id="soa-ph-key" placeholder="client_name" style="width:140px">
-            <span class="brace">}}</span>
-          </div>
-          <input type="text" id="soa-ph-val" placeholder="value" style="background:var(--s3);border:none;outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:200px">
-          <button class="btn btn-accent btn-sm" onclick="soaAddPh()">+ Add</button>
+        <div class="soa-section-hdr" style="background:#2E75B6;margin-top:14px">Placeholders (from Fill Fields tab)</div>
+        <div class="panel-sub" style="margin:4px 0 6px">Define <strong style="color:var(--accent)">{{placeholders}}</strong> in the ✏️ Fill Fields tab — they substitute automatically in all rich text fields below.</div>
+        <div id="soa-ph-preview" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:var(--s2);border:1px solid var(--border);border-radius:5px;min-height:34px;margin-bottom:6px">
+          <span style="color:var(--muted);font-size:11px;align-self:center" id="soa-ph-empty-msg">No placeholders defined yet.</span>
+        </div>
+        <button class="btn btn-grey btn-sm" onclick="switchTab('fields')">✏️ Go to Fill Fields →</button>
+
+        <!-- ── SCOPE OF ADVICE ── -->
+        <div class="soa-section-hdr" style="background:#1B4F72;margin-top:18px">Scope of Advice — Formatting</div>
+        <div class="soa-grid">
+<div class="soa-field"><label>Title Page Image</label><select id="title_page_image" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Advisor Preference">Advisor Preference</option><option value="Full Title Page Image">Full Title Page Image</option><option value="Full Custom Page Image">Full Custom Page Image</option><option value="Half Title Page Image">Half Title Page Image</option><option value="Half Custom Page Image">Half Custom Page Image</option><option value="No Image Title Page">No Image Title Page</option></select></div><div class="soa-field"><label>Section Break Images</label><select id="section_break_images" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Advisor Preference">Advisor Preference</option><option value="Include Images">Include Images</option><option value="Do Not Include">Do Not Include</option></select></div><div class="soa-field"><label>SOA Colour Scheme</label><select id="soa_colour_scheme" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Advisor Preference">Advisor Preference</option><option value="Dark Blue">Dark Blue</option><option value="Black">Black</option><option value="Dark Grey">Dark Grey</option><option value="Green">Green</option><option value="Red">Red</option><option value="Purple">Purple</option></select></div><div class="soa-field"><label>SOA Footer Style</label><select id="soa_footer" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Advisor Preference">Advisor Preference</option><option value="Long Footer">Long Footer</option><option value="Short Footer">Short Footer</option></select></div><div class="soa-field"><label>Naming Convention</label><select id="naming_convention" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Advisor Preference">Advisor Preference</option><option value="First Name">First Name</option><option value="Preferred Name">Preferred Name</option></select></div><div class="soa-field"><label>Executive Summary Style</label><select id="executive_summary" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Advisor Preference">Advisor Preference</option><option value="Full Executive Summary">Full Executive Summary</option><option value="Short Executive Summary">Short Executive Summary</option><option value="No Executive Summary">No Executive Summary</option></select></div>          <div class="soa-field"><label>Date of SOA (DD/MM/YYYY)</label><input type="text" id="date_of_soa" placeholder="e.g. 01/07/2026"></div>
+<div class="soa-field"><label>SOA Type</label><select id="soa_type" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Individual (option to include linked entities)">Individual (option to include linked entities)</option><option value="A linked entity">A linked entity</option></select></div>        </div>
+
+        <!-- Report Entity -->
+        <div class="soa-section-hdr" style="background:#1B4F72;margin-top:10px">Report Entity</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="re_client" checked> Client</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="re_partner" > Partner</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="re_joint" > Joint</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="re_linked" > Linked Entities</label>
         </div>
 
-        <!-- Strategies -->
-        <div class="soa-section-hdr" style="background:#375623;margin-top:16px">Strategies <button class="btn btn-grey btn-sm" style="margin-left:auto;font-size:10px" onclick="soaAddStrategy()">+ Add Strategy</button></div>
-        <div id="soa-strategies"></div>
+        <!-- SOA Options -->
+        <div class="soa-section-hdr" style="background:#1B4F72;margin-top:10px">SOA Options</div>
+        <div class="soa-grid">
+<div class="soa-field"><label>Include Cover Letter</label><select id="include_coverletter" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>Include Custom Cover Letter</label><select id="include_custom_cover_letter" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>Include Signature Options</label><select id="advice_signature_options" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>Include Goals Icons</label><select id="include_goals_icons" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>Include Implementation Page</label><select id="include_implementation_page" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>SOA Incomplete Information</label><select id="soa_incomplete_information" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="No">No</option><option value="Yes">Yes</option></select></div><div class="soa-field"><label>Current Scenario Placement</label><select id="current_scenario_place" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Body of SOA">Body of SOA</option><option value="Appendix">Appendix</option><option value="Summary in Body">Summary in Body</option></select></div><div class="soa-field"><label>Include Product Recommendations</label><select id="include_product_recommendations" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>Include Custom Scope</label><select id="include_custom_scope" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>Include Scope of Advice Reasons</label><select id="include_scope_reasons" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>Include Scope Out Section</label><select id="include_scope_out_section" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div>        </div>
 
-        <!-- Scope of Advice text -->
-        <div class="soa-section-hdr" style="background:#2E75B6;margin-top:14px">Scope of Advice</div>
-        <div style="font-size:10px;color:var(--muted);margin:-2px 0 8px">Text in Scope In = marked IN. Text in Scope Out = marked OUT. Both empty = untouched in the template.</div>
+        <!-- Scope In checkboxes -->
+        <div class="soa-section-hdr" style="background:#1B6B3A;margin-top:10px">Scope In</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_in_insurance" > Personal Insurance</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_in_investments" > Investments</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_in_super" > Superannuation</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_in_debt" > Debt Management</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_in_retirement" > Retirement Planning</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_in_estate" > Estate Planning</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_in_cashflow" > Cashflow</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_in_social" > Social Security</label>
+        </div>
+
+        <!-- Scope Out checkboxes -->
+        <div class="soa-section-hdr" style="background:#7D6608;margin-top:6px">Scope Out</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_out_insurance" > Personal Insurance</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_out_investments" > Investments</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_out_super" > Superannuation</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_out_debt" > Debt Management</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_out_retirement" > Retirement Planning</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_out_estate" > Estate Planning</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_out_cashflow" > Cashflow</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="scope_out_social" > Social Security</label>
+        </div>
+
+        <!-- Scope text pairs -->
+        <div class="soa-section-hdr" style="background:#2E75B6;margin-top:10px">Scope of Advice Text</div>
         <style>
           .scope-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;padding:10px;background:var(--s2);border:1px solid var(--border);border-radius:6px}
           .scope-pair-label{grid-column:1/-1;font-family:"Syne",sans-serif;font-weight:700;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:4px}
-          .scope-badge{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700;letter-spacing:.04em}
-          .scope-badge.in{background:rgba(45,212,160,.15);color:var(--green)}
-          .scope-badge.out{background:rgba(245,166,35,.15);color:var(--amber)}
-          .scope-badge.empty{background:var(--s3);color:var(--muted)}
+
           .scope-col label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px;margin-bottom:3px}
-          .scope-col label .in-tag{background:rgba(45,212,160,.2);color:var(--green);font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700}
-          .scope-col label .out-tag{background:rgba(245,166,35,.2);color:var(--amber);font-size:9px;padding:1px 5px;border-radius:3px;font-weight:700}
+
           .scope-col textarea{width:100%;background:var(--s1);border:1px solid var(--border);outline:none;color:var(--text);font-family:"DM Sans",sans-serif;font-size:12px;padding:6px 9px;border-radius:4px;resize:vertical;line-height:1.5;transition:.15s}
           .scope-col textarea:focus{border-color:var(--accent)}
-          .scope-col textarea.has-text-in{border-color:rgba(45,212,160,.5);background:rgba(45,212,160,.03)}
-          .scope-col textarea.has-text-out{border-color:rgba(245,166,35,.5);background:rgba(245,166,35,.03)}
+
         </style>
-        <div class="scope-pair" id="scope-pair-insurance">
-          <div class="scope-pair-label">
-            Insurance
-            <span class="scope-badge empty" id="scope-badge-insurance">UNTOUCHED</span>
-          </div>
-          <div class="scope-col">
-            <label><span class="in-tag">IN</span> Scope In Text</label>
-            <textarea id="scope_in_text_insurance" rows="3" placeholder="Text when in scope..." oninput="updateScopeBadge('insurance')"></textarea>
-          </div>
-          <div class="scope-col">
-            <label><span class="out-tag">OUT</span> Scope Out Text</label>
-            <textarea id="scope_out_text_insurance" rows="3" placeholder="Text when out of scope..." oninput="updateScopeBadge('insurance')"></textarea>
-          </div>
+
+        <div class="scope-pair">
+          <div class="scope-pair-label">Insurance</div>
+          <div class="scope-col"><label>Scope In — Narrative Text</label><textarea id="scope_in_text_insurance" rows="3"></textarea></div>
+          <div class="scope-col"><label>Scope Out — Narrative Text</label><textarea id="scope_out_text_insurance" rows="3"></textarea></div>
         </div>
-        <div class="scope-pair" id="scope-pair-investments">
-          <div class="scope-pair-label">
-            Investments
-            <span class="scope-badge empty" id="scope-badge-investments">UNTOUCHED</span>
-          </div>
-          <div class="scope-col">
-            <label><span class="in-tag">IN</span> Scope In Text</label>
-            <textarea id="scope_in_text_investments" rows="3" placeholder="Text when in scope..." oninput="updateScopeBadge('investments')"></textarea>
-          </div>
-          <div class="scope-col">
-            <label><span class="out-tag">OUT</span> Scope Out Text</label>
-            <textarea id="scope_out_text_investments" rows="3" placeholder="Text when out of scope..." oninput="updateScopeBadge('investments')"></textarea>
-          </div>
+        <div class="scope-pair">
+          <div class="scope-pair-label">Investments</div>
+          <div class="scope-col"><label>Scope In — Narrative Text</label><textarea id="scope_in_text_investments" rows="3"></textarea></div>
+          <div class="scope-col"><label>Scope Out — Narrative Text</label><textarea id="scope_out_text_investments" rows="3"></textarea></div>
         </div>
-        <div class="scope-pair" id="scope-pair-super">
-          <div class="scope-pair-label">
-            Superannuation
-            <span class="scope-badge empty" id="scope-badge-super">UNTOUCHED</span>
-          </div>
-          <div class="scope-col">
-            <label><span class="in-tag">IN</span> Scope In Text</label>
-            <textarea id="scope_in_text_super" rows="3" placeholder="Text when in scope..." oninput="updateScopeBadge('super')"></textarea>
-          </div>
-          <div class="scope-col">
-            <label><span class="out-tag">OUT</span> Scope Out Text</label>
-            <textarea id="scope_out_text_super" rows="3" placeholder="Text when out of scope..." oninput="updateScopeBadge('super')"></textarea>
-          </div>
+        <div class="scope-pair">
+          <div class="scope-pair-label">Superannuation</div>
+          <div class="scope-col"><label>Scope In — Narrative Text</label><textarea id="scope_in_text_super" rows="3"></textarea></div>
+          <div class="scope-col"><label>Scope Out — Narrative Text</label><textarea id="scope_out_text_super" rows="3"></textarea></div>
         </div>
-        <div class="scope-pair" id="scope-pair-debt">
-          <div class="scope-pair-label">
-            Debt Management
-            <span class="scope-badge empty" id="scope-badge-debt">UNTOUCHED</span>
-          </div>
-          <div class="scope-col">
-            <label><span class="in-tag">IN</span> Scope In Text</label>
-            <textarea id="scope_in_text_debt" rows="3" placeholder="Text when in scope..." oninput="updateScopeBadge('debt')"></textarea>
-          </div>
-          <div class="scope-col">
-            <label><span class="out-tag">OUT</span> Scope Out Text</label>
-            <textarea id="scope_out_text_debt" rows="3" placeholder="Text when out of scope..." oninput="updateScopeBadge('debt')"></textarea>
-          </div>
+        <div class="scope-pair">
+          <div class="scope-pair-label">Debt Management</div>
+          <div class="scope-col"><label>Scope In — Narrative Text</label><textarea id="scope_in_text_debt" rows="3"></textarea></div>
+          <div class="scope-col"><label>Scope Out — Narrative Text</label><textarea id="scope_out_text_debt" rows="3"></textarea></div>
         </div>
-        <div class="scope-pair" id="scope-pair-retirement">
-          <div class="scope-pair-label">
-            Retirement Planning
-            <span class="scope-badge empty" id="scope-badge-retirement">UNTOUCHED</span>
-          </div>
-          <div class="scope-col">
-            <label><span class="in-tag">IN</span> Scope In Text</label>
-            <textarea id="scope_in_text_retirement" rows="3" placeholder="Text when in scope..." oninput="updateScopeBadge('retirement')"></textarea>
-          </div>
-          <div class="scope-col">
-            <label><span class="out-tag">OUT</span> Scope Out Text</label>
-            <textarea id="scope_out_text_retirement" rows="3" placeholder="Text when out of scope..." oninput="updateScopeBadge('retirement')"></textarea>
-          </div>
+        <div class="scope-pair">
+          <div class="scope-pair-label">Retirement Planning</div>
+          <div class="scope-col"><label>Scope In — Narrative Text</label><textarea id="scope_in_text_retirement" rows="3"></textarea></div>
+          <div class="scope-col"><label>Scope Out — Narrative Text</label><textarea id="scope_out_text_retirement" rows="3"></textarea></div>
         </div>
-        <div class="scope-pair" id="scope-pair-estate">
-          <div class="scope-pair-label">
-            Estate Planning
-            <span class="scope-badge empty" id="scope-badge-estate">UNTOUCHED</span>
-          </div>
-          <div class="scope-col">
-            <label><span class="in-tag">IN</span> Scope In Text</label>
-            <textarea id="scope_in_text_estate" rows="3" placeholder="Text when in scope..." oninput="updateScopeBadge('estate')"></textarea>
-          </div>
-          <div class="scope-col">
-            <label><span class="out-tag">OUT</span> Scope Out Text</label>
-            <textarea id="scope_out_text_estate" rows="3" placeholder="Text when out of scope..." oninput="updateScopeBadge('estate')"></textarea>
-          </div>
+        <div class="scope-pair">
+          <div class="scope-pair-label">Estate Planning</div>
+          <div class="scope-col"><label>Scope In — Narrative Text</label><textarea id="scope_in_text_estate" rows="3"></textarea></div>
+          <div class="scope-col"><label>Scope Out — Narrative Text</label><textarea id="scope_out_text_estate" rows="3"></textarea></div>
         </div>
-        <div class="scope-pair" id="scope-pair-cashflow">
-          <div class="scope-pair-label">
-            Cashflow
-            <span class="scope-badge empty" id="scope-badge-cashflow">UNTOUCHED</span>
-          </div>
-          <div class="scope-col">
-            <label><span class="in-tag">IN</span> Scope In Text</label>
-            <textarea id="scope_in_text_cashflow" rows="3" placeholder="Text when in scope..." oninput="updateScopeBadge('cashflow')"></textarea>
-          </div>
-          <div class="scope-col">
-            <label><span class="out-tag">OUT</span> Scope Out Text</label>
-            <textarea id="scope_out_text_cashflow" rows="3" placeholder="Text when out of scope..." oninput="updateScopeBadge('cashflow')"></textarea>
-          </div>
+        <div class="scope-pair">
+          <div class="scope-pair-label">Cashflow</div>
+          <div class="scope-col"><label>Scope In — Narrative Text</label><textarea id="scope_in_text_cashflow" rows="3"></textarea></div>
+          <div class="scope-col"><label>Scope Out — Narrative Text</label><textarea id="scope_out_text_cashflow" rows="3"></textarea></div>
         </div>
-        <div class="scope-pair" id="scope-pair-social">
-          <div class="scope-pair-label">
-            Social Security
-            <span class="scope-badge empty" id="scope-badge-social">UNTOUCHED</span>
-          </div>
-          <div class="scope-col">
-            <label><span class="in-tag">IN</span> Scope In Text</label>
-            <textarea id="scope_in_text_social" rows="3" placeholder="Text when in scope..." oninput="updateScopeBadge('social')"></textarea>
-          </div>
-          <div class="scope-col">
-            <label><span class="out-tag">OUT</span> Scope Out Text</label>
-            <textarea id="scope_out_text_social" rows="3" placeholder="Text when out of scope..." oninput="updateScopeBadge('social')"></textarea>
-          </div>
+        <div class="scope-pair">
+          <div class="scope-pair-label">Social Security</div>
+          <div class="scope-col"><label>Scope In — Narrative Text</label><textarea id="scope_in_text_social" rows="3"></textarea></div>
+          <div class="scope-col"><label>Scope Out — Narrative Text</label><textarea id="scope_out_text_social" rows="3"></textarea></div>
         </div>
 
-        <!-- Ongoing Review -->
+        <!-- ── RISK PROFILE ── -->
+        <div class="soa-section-hdr" style="background:#7030A0;margin-top:14px">Risk Profile</div>
+        <div class="soa-grid">
+<div class="soa-field"><label>Risk Profile — Client</label><select id="risk_profile_client" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Capital Preservation">Capital Preservation</option><option value="Defensive">Defensive</option><option value="Balanced">Balanced</option><option value="Balanced Growth">Balanced Growth</option><option value="Growth">Growth</option><option value="High Growth">High Growth</option></select></div><div class="soa-field"><label>Risk Profile — Partner</label><select id="risk_profile_partner" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Capital Preservation">Capital Preservation</option><option value="Defensive">Defensive</option><option value="Balanced">Balanced</option><option value="Balanced Growth">Balanced Growth</option><option value="Growth">Growth</option><option value="High Growth">High Growth</option></select></div><div class="soa-field"><label>Risk Profile — Joint</label><select id="risk_profile_joint" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Capital Preservation">Capital Preservation</option><option value="Defensive">Defensive</option><option value="Balanced">Balanced</option><option value="Balanced Growth">Balanced Growth</option><option value="Growth">Growth</option><option value="High Growth">High Growth</option></select></div>        </div>
+
+        <!-- ── XPLAN CONTENT ── -->
+        <div class="soa-section-hdr" style="background:#7E5109;margin-top:14px">Xplan Content — Modules</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="module_portfolio" > Portfolio (IPS)</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="module_rr" checked > Risk Researcher</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="module_ws" checked > Wealth Solver</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="module_xtools" > Xtools+ (CALM)</label>
+        </div>
+
+        <div class="soa-grid" style="margin:8px 0">
+          <div class="soa-field"><label>Risk Researcher Source</label><input type="text" id="rr_source" placeholder="e.g. 2026 SOA" value="2026 SOA"></div>
+          <div class="soa-field"><label>WealthSolver Source</label><input type="text" id="ws_source" placeholder="e.g. 2026 SOA (Scenario Modelling)" value="2026 SOA (Scenario Modelling)"></div>
+        </div>
+        <div class="soa-section-hdr" style="background:#7E5109;margin-top:6px">Risk Researcher Content</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="rr_needs_analysis" checked > Needs Analysis</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="rr_auto_gains" checked > Automated Gains and Losses</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="rr_alt_insurance" checked > Alternative Insurance</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="rr_auto_fee" checked > Automated Fee Disclosure</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="rr_product_comparison" checked > Product Comparison Report - Appendix</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="rr_replace_compare" checked > Insurance Replacement Compare Ratings - Appendix</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="rr_premium_comparison" checked > Premium Comparison Report - Appendix</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="rr_product_summary" checked > Product Summary Report - Appendix</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="rr_compare_diff" checked > Compare Differences Report - Appendix</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="rr_compare_ratings" checked > Compare Ratings Grid - Appendix</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="rr_pds" checked > Product Disclosure Statement for Recommended Products</label>
+        </div>
+
+        <div class="soa-section-hdr" style="background:#7E5109;margin-top:6px">WealthSolver Content</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_product_table_full" checked > Product Replacement Table - Incl % and $ (Full)</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_product_table_nozero" checked > Product Replacement Table - Incl % and $ (No Zeros)</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_product_table_fee_full" checked > Product Replacement Table - $ only with Total Fees (Full)</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_product_table_fee_nozero" checked > Product Replacement Table - $ only with Total Fees (No Zeros)</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_inv_rec" checked > Investment Recommendations</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_asset_alloc" checked > Proposed Asset Allocation</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_super_comparison" checked > Outcome of the Superannuation Comparison</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_alt_products" checked > Alternative Products</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_auto_fee" checked > Automated Fee Disclosure</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_auto_fee_detail" checked > Additional: Automated Fee Disclosure - Detailed Fund Manager Fees</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_tables_final_bal" checked > Product Replacement Tables (Comparison of final balance) - Appendix</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_tables_like_for_like" checked > Product Replacement Tables (Like for Like) - Appendix</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="ws_pds" checked > Product Disclosure Statements for proposed plans</label>
+        </div>
+
+        <!-- ── STRATEGIES ── -->
+        <div class="soa-section-hdr" style="background:#375623;margin-top:14px">Strategies <button class="btn btn-grey btn-sm" style="margin-left:auto;font-size:10px" onclick="soaAddStrategy()">+ Add Strategy</button></div>
+        <div id="soa-strategies"></div>
+
+        <!-- ── INVESTMENT RECOMMENDATIONS ── -->
+        <div class="soa-section-hdr" style="background:#1A5276;margin-top:14px">Investment Recommendations <button class="btn btn-grey btn-sm" style="margin-left:auto;font-size:10px" onclick="soaAddInvProduct()">+ Add Product</button></div>
+        <div class="soa-grid" style="margin-bottom:8px">
+<div class="soa-field"><label>Include Alternative Products</label><select id="include_alt_products" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="Yes">Yes</option><option value="No">No</option></select></div>
+        </div>
+        <div id="soa-inv-products"></div>
+
+        <!-- ── REPLACEMENT PRODUCTS ── -->
+        <div class="soa-section-hdr" style="background:#922B21;margin-top:14px">Replacement Products</div>
+        <div class="soa-grid">
+<div class="soa-field"><label>Replacing Investment Product</label><select id="replacing_investment" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>Replacing Insurance Product</label><select id="replacing_insurance" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>Include Fee Aggregation</label><select id="inc_fee_agg" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div>        </div>
+
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:8px 0 4px">Insurance Fees &amp; Charges</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:8px">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_premiums_increase" > Insurance premiums will increase</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_higher_policy_fees" > New insurance policy[ies] will have higher policy fees</label>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:8px 0 4px">Insurance Benefits Lost (Group 1)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:8px">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_tpd_super" > Purchasing TPD via your super fund means cover will default to 'Any Occupation' definition</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_tpd_own" > Purchasing TPD outside of super means your cover will change from 'Any' to 'Own Occupation'</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_ip_super" > Purchasing income protection via super means you are not eligible for income tax deduction</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_cashflow" > Cashflow affected as you will need to fund premiums with your own money</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_uw_loading" > Need to go through underwriting and end up paying a loading</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_uw_excl" > Need to go through underwriting and end up with exclusions</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_cancelled" > May be cancelled within three years if non-disclosure</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_cheaper" > Cheaper insurance policy may mean foregoing better definitions and coverage</label>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:8px 0 4px">Insurance Benefits Lost (Group 2)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:8px">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_preexisting" > Pre-existing medical condition/s may not be covered</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_suicide" > May need to serve 'suicide clause' again in new policy</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_auto_accept" > Lose 'automatic acceptance' ability</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_waiting" > Policy waiting period extended</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_trauma" > Cheaper Trauma/Critical Illness policy means fewer medical events listed</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_no_loss" > No benefits will be lost upon replacement</label>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:8px 0 4px">Insurance Other Consequences</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:8px">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_disability" > Definition of 'disability' has changed</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_cgt" > Capital Gains Tax</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="insur_no_conseq" > No other consequences upon replacement</label>
+        </div>
+
+        <!-- ── OUTCOMES OF ADVICE ── -->
+        <div class="soa-section-hdr" style="background:#4472C4;margin-top:14px">Outcomes of Advice</div>
+        <div class="soa-grid">
+<div class="soa-field"><label>SOA Funding — Insurance</label><select id="soa_funding_insurance" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>Include Xtools Chart</label><select id="include_xtools_chart" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>Supporting Calculations</label><select id="supporting_calcs" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>Retirement Analysis</label><select id="retirement_analysis" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div><div class="soa-field"><label>BPS / MYG</label><select id="bps_myg" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div>        </div>
+
+        <!-- ── FEES & CHARGES ── -->
+        <div class="soa-section-hdr" style="background:#BF8F00;margin-top:14px">Fees &amp; Charges <button class="btn btn-grey btn-sm" style="margin-left:auto;font-size:10px" onclick="soaAddFeeRow()">+ Add Product Fee</button></div>
+
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:8px 0 4px">Fees Apply To</div>
+        <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap">
+<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input class="cb" type="checkbox" id="fee_who_client" checked> Client</label><label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input class="cb" type="checkbox" id="fee_who_partner" checked> Partner</label><label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input class="cb" type="checkbox" id="fee_who_joint" checked> Joint</label><label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input class="cb" type="checkbox" id="fee_who_linked" checked> Linked Entity</label>
+        </div>
+
+        <div style="display:grid;grid-template-columns:160px 1fr 1fr 1fr;gap:6px;margin-bottom:4px;align-items:center">
+          <div></div>
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:center">Advice Prep ($)</div>
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:center">Implementation ($)</div>
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:center">Ongoing Advice ($)</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:160px 1fr 1fr 1fr;gap:6px;margin-bottom:4px;align-items:center">
+          <div style="font-size:11px;font-weight:600;color:var(--text)">Client</div>
+          <input type="number" id="fee_ap_client" placeholder="0" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;text-align:right">
+          <input type="number" id="fee_imp_client" placeholder="0" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;text-align:right">
+          <input type="number" id="fee_ong_client" placeholder="0" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;text-align:right">
+        </div>
+        <div style="display:grid;grid-template-columns:160px 1fr 1fr 1fr;gap:6px;margin-bottom:4px;align-items:center">
+          <div style="font-size:11px;font-weight:600;color:var(--text)">Partner</div>
+          <input type="number" id="fee_ap_partner" placeholder="0" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;text-align:right">
+          <input type="number" id="fee_imp_partner" placeholder="0" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;text-align:right">
+          <input type="number" id="fee_ong_partner" placeholder="0" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;text-align:right">
+        </div>
+        <div style="display:grid;grid-template-columns:160px 1fr 1fr 1fr;gap:6px;margin-bottom:4px;align-items:center">
+          <div style="font-size:11px;font-weight:600;color:var(--text)">Joint</div>
+          <input type="number" id="fee_ap_joint" placeholder="0" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;text-align:right">
+          <input type="number" id="fee_imp_joint" placeholder="0" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;text-align:right">
+          <input type="number" id="fee_ong_joint" placeholder="0" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;text-align:right">
+        </div>
+        <div style="display:grid;grid-template-columns:160px 1fr 1fr 1fr;gap:6px;margin-bottom:4px;align-items:center">
+          <div style="font-size:11px;font-weight:600;color:var(--text)">Linked Entity</div>
+          <input type="number" id="fee_ap_linked" placeholder="0" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;text-align:right">
+          <input type="number" id="fee_imp_linked" placeholder="0" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;text-align:right">
+          <input type="number" id="fee_ong_linked" placeholder="0" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;text-align:right">
+        </div>
+
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 4px">Product Fee Disclosure Rows</div>
+        <div id="soa-fee-rows"></div>
+
+        <!-- ── ONGOING REVIEW ── -->
         <div class="soa-section-hdr" style="background:#538135;margin-top:14px">Ongoing Review Service</div>
         <div class="soa-grid">
-          <div class="soa-field wide"><label>Ongoing Review Service Text</label><textarea id="ors_text" rows="6" placeholder="We believe it is important...&#10;&#10;[TABLE]&#10;Service | Frequency | Delivery&#10;Annual review meeting | Annually | In person / Zoom&#10;[/TABLE]"></textarea></div>
+<div class="soa-field"><label>Charging Ongoing Review Service</label><select id="charging_ors" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="Yes">Yes</option><option value="No">No</option></select></div>
+          <div class="soa-field wide"><label>Ongoing Review Service Text</label><textarea id="ors_text" rows="6" placeholder="Use Alt+Enter for line breaks. {{placeholders}} supported. [TABLE]...[/TABLE] for tables."></textarea></div>
         </div>
 
-        <!-- Implementation -->
+        <!-- ── IMPLEMENTATION ── -->
         <div class="soa-section-hdr" style="background:#0070C0;margin-top:14px">Implementation</div>
-        <div class="soa-grid">
-          <div class="soa-field wide"><label>Implementation Text</label><textarea id="implementation_text" rows="4" placeholder=""></textarea></div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;margin-bottom:8px">
+<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="impl_pds" > Include list of PDS's to read</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="impl_forms" > Include list of Application forms to complete and sign</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="impl_steps" > Include a list of additional implementation steps</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="impl_id_docs" > Include a request for Identification Documents</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="impl_follow_plan" > Include the section 'Follow the implementation Plan'</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="impl_portfolio" > Include the section 'Portfolio - Summary of changes'</label>
+        </div>
+        <div class="soa-field wide" style="padding:0 2px">
+          <label>Implementation Text</label>
+          <textarea id="implementation_text" rows="4" style="width:100%;background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:6px 9px;border-radius:4px;resize:vertical" placeholder="Use Alt+Enter for line breaks. {{placeholders}} supported."></textarea>
         </div>
 
-        <!-- Important Relationships -->
-        <div class="soa-section-hdr" style="background:#BF8F00;margin-top:14px">Fees &amp; Charges</div>
-        <div class="soa-grid">
-          <div class="soa-field wide"><label>Important Relationships</label><textarea id="important_relationships_text" rows="3" placeholder=""></textarea></div>
+        <!-- ── FLYERS ── -->
+        <div class="soa-section-hdr" style="background:#7030A0;margin-top:14px">Flyers</div>
+        <div class="soa-grid" style="margin-bottom:8px">
+<div class="soa-field"><label>Include Educational Flyers</label><select id="include_educational_flyers" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="" selected>— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
         </div>
 
-      </div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 3px">Cashflow & Debt</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_debt_mgmt" > Debt Management</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_debt_recycling" > Debt Recycling</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_redundancy" > Redundancy</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_salary_packaging" > Salary Packaging</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_budget" > Set and maintain a budget</label>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 3px">Investments</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_dca" > Dollar Cost Averaging</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_etf" > Exchange Traded Funds</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_gearing" > Gearing</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_income_stream" > Guaranteed Income Stream</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_inv_bond" > Investment Bond</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_inv_risks" > Investment Risks</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_inv_general" > Investments (General)</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_mda" > Managed Discretionary Accounts</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_margin_lending" > Margin Lending</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_sma" > Separately Managed Accounts</label>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 3px">Retirement & Super</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_abp" > Account Based Pension</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_annuities" > Annuities</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_super" > Super</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_tbc_index" > Transfer Balance Cap Indexation</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_tbc" > Transfer Balance Cap</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_ttr" > Transition to Retirement Income</label>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 3px">SMSF</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_smsf" > SMSF</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_smsf_strategy" > SMSF Investment Strategy</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_smsf_lrba" > SMSF Limited Recourse Borrowing Arrangement</label>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 3px">Contributions</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_ncc" > Non Concessional Contributions</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_cc" > Concessional Contributions</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_downsizer" > Downsizer Contributions</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_recontrib" > Re-Contribution Strategy</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_salary_sac" > Salary Sacrifice</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_spouse_contrib" > Spouse Contribution</label>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 3px">Insurance</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_biz_expense" > Business Expense Insurance</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_biz_protection" > Business Protection Insurance</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_personal_ins" > Personal Insurance</label>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 3px">Social Security</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_age_pension" > Age Pension</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_carer_allowance" > Carer Allowance</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_carer_payment" > Carer Payment</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_centrelink" > Centrelink Means Testing and Deeming</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_seniors_card" > Commonwealth Seniors Health Card</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_dsp" > Disability Support Pension</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_dva" > DVA Service Pension</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_ftb" > Family Tax Benefit A and B</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_gifting" > Gifting</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_granny_flat" > Granny Flat</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_jobseeker" > Jobseeker</label>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 3px">Tax</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_cgt" > Capital Gains Tax</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_small_biz_tax" > Small Business Tax Concessions</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_taxation" > Taxation</label>
+        </div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 3px">Other</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px 20px;padding:6px 2px;background:var(--s2);border-radius:5px;margin-bottom:4px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_estate" > Estate Planning</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_aged_care" > Aged Care</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_funeral_bonds" > Funeral Bonds</label><label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:2px 0"><input class="cb" type="checkbox" id="flyer_trusts" > Trusts</label>
+        </div>
+
+      </div><!-- end panel-body -->
+
       <div class="panel-footer">
         <div class="btn-row">
           <span class="tlabel">Export:</span>
@@ -499,25 +592,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
           <button class="btn btn-red btn-sm" style="margin-left:auto" onclick="soaClear()">↺ Clear All</button>
         </div>
         <div class="btn-row">
-          <span class="tlabel">Placeholders:</span>
-          <button class="btn btn-grey btn-sm" onclick="soaSavePh()">💾 Save</button>
-          <button class="btn btn-grey btn-sm" onclick="soaLoadPh()">📂 Load</button>
-        </div>
-        <div class="btn-row">
-          <span class="tlabel">Field Data:</span>
-          <button class="btn btn-grey btn-sm" onclick="soaSaveFields()">💾 Save</button>
-          <button class="btn btn-grey btn-sm" onclick="soaLoadFields()">📂 Load</button>
-        </div>
-        <div class="btn-row">
-          <span class="tlabel">Full Draft:</span>
-          <button class="btn btn-grey btn-sm" onclick="soaSave()">💾 Save All</button>
-          <button class="btn btn-grey btn-sm" onclick="soaLoad()">📂 Load All</button>
+          <span class="tlabel">Save / Load:</span>
+          <button class="btn btn-grey btn-sm" onclick="soaSave()">💾 Save</button>
+          <button class="btn btn-grey btn-sm" onclick="soaLoad()">📂 Load</button>
+          <span style="font-size:10px;color:var(--muted);margin-left:4px">Saves everything — placeholders, all fields, strategies, fees</span>
         </div>
         <div style="font-size:10px;color:var(--muted)">
           Rich text: <b>Alt+Enter</b> for line breaks · <code>**bold**</code> · <code>~~green~~</code> · <code>[TABLE] H1 | H2 / R1 | R2 [/TABLE]</code>
         </div>
       </div>
-    </div>
+    </div><!-- end panel-soa -->
 
   </div>
 </div>
@@ -567,8 +651,9 @@ function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
-  if (name === 'run') updateStats();
+  if (name === 'run')    updateStats();
   if (name === 'fields') renderFieldForm();
+  if (name === 'soa')    soaRefreshPhPreview();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1381,47 +1466,69 @@ function updateBadge(tab, n) {
 // ═══════════════════════════════════════════════════════════════════
 // SOA EXPORT
 // ═══════════════════════════════════════════════════════════════════
-let soaPlaceholders = {}; // {key: value}
-let soaStrategies   = []; // [{heading, who_for, type, strategy, our_recommendation, why_appropriate, what_to_consider, implementation, outcome, alt_strat_details, ...}]
+let soaStrategies   = [];
+let soaFeeRows      = []; // [{product_type, product_owner, product_name, initial_commission, ongoing_commission, premium, base_premium, dealer_fees}] // [{heading, who_for, type, strategy, our_recommendation, why_appropriate, what_to_consider, implementation, outcome, alt_strat_details, ...}]
 
-function updateScopeBadge(key) {
-  const inEl  = document.getElementById('scope_in_text_'  + key);
-  const outEl = document.getElementById('scope_out_text_' + key);
-  const badge = document.getElementById('scope-badge-'    + key);
-  if (!inEl || !outEl || !badge) return;
-  const hasIn  = inEl.value.trim().length  > 0;
-  const hasOut = outEl.value.trim().length > 0;
-  inEl.className  = hasIn  ? 'has-text-in'  : '';
-  outEl.className = hasOut ? 'has-text-out' : '';
-  if (hasIn && hasOut) {
-    badge.textContent = 'IN + OUT'; badge.className = 'scope-badge in';
-  } else if (hasIn) {
-    badge.textContent = 'IN';  badge.className = 'scope-badge in';
-  } else if (hasOut) {
-    badge.textContent = 'OUT'; badge.className = 'scope-badge out';
-  } else {
-    badge.textContent = 'UNTOUCHED'; badge.className = 'scope-badge empty';
+function soaAddFeeRow() {
+  soaFeeRows.push({
+    product_type: '', product_owner: '', product_name: '',
+    initial_commission: '', ongoing_commission: '',
+    premium: '', base_premium: '', notes: ''
+  });
+  soaRenderFeeRows();
+}
+
+function soaRenderFeeRows() {
+  const el = document.getElementById('soa-fee-rows');
+  if (!el) return;
+  if (!soaFeeRows.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 2px">No product fee rows yet — click + Add Product Fee above.</div>';
+    return;
+  }
+  el.innerHTML = soaFeeRows.map((f, i) => `
+    <div style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700;font-size:11px;color:var(--amber)">
+        Product Fee Row ${i + 1}
+        <span style="font-weight:400;color:var(--muted)">${f.product_name || '(unnamed)'}</span>
+        <button class="rm-btn" style="margin-left:auto" onclick="soaFeeRows.splice(${i},1);soaRenderFeeRows()">✕ Remove</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
+        <div class="soa-strat-field"><label>Product Type</label><input type="text" value="${esc(f.product_type)}" oninput="soaFeeRows[${i}].product_type=this.value" placeholder="Match Xplan dropdown"></div>
+        <div class="soa-strat-field"><label>Product Owner</label><input type="text" value="${esc(f.product_owner)}" oninput="soaFeeRows[${i}].product_owner=this.value" placeholder="Match Xplan dropdown"></div>
+        <div class="soa-strat-field"><label>Product Name</label><input type="text" value="${esc(f.product_name)}" oninput="soaFeeRows[${i}].product_name=this.value;soaRenderFeeRowLabel(${i},this.value)" placeholder="Free text"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
+        <div class="soa-strat-field"><label>Initial Commission ($)</label><input type="number" value="${esc(f.initial_commission)}" oninput="soaFeeRows[${i}].initial_commission=this.value" placeholder="0"></div>
+        <div class="soa-strat-field"><label>Ongoing Commission ($)</label><input type="number" value="${esc(f.ongoing_commission)}" oninput="soaFeeRows[${i}].ongoing_commission=this.value" placeholder="0"></div>
+        <div class="soa-strat-field"><label>Premium ($)</label><input type="number" value="${esc(f.premium)}" oninput="soaFeeRows[${i}].premium=this.value" placeholder="0"></div>
+        <div class="soa-strat-field"><label>Base Premium ($)</label><input type="number" value="${esc(f.base_premium)}" oninput="soaFeeRows[${i}].base_premium=this.value" placeholder="0"></div>
+
+      </div>
+    </div>`).join('');
+}
+
+function soaRenderFeeRowLabel(i, val) {
+  const rows = document.querySelectorAll('#soa-fee-rows > div');
+  if (rows[i]) {
+    const span = rows[i].querySelector('span');
+    if (span) span.textContent = val || '(unnamed)';
   }
 }
 
-function soaAddPh() {
-  const key = document.getElementById('soa-ph-key').value.trim().replace(/[{}]/g,'');
-  const val = document.getElementById('soa-ph-val').value;
-  if (!key) return;
-  soaPlaceholders[key] = val;
-  document.getElementById('soa-ph-key').value = '';
-  document.getElementById('soa-ph-val').value = '';
-  soaRenderPhs();
-}
-
-function soaRenderPhs() {
-  const el = document.getElementById('soa-ph-list');
-  if (!Object.keys(soaPlaceholders).length) { el.innerHTML = ''; return; }
-  el.innerHTML = Object.entries(soaPlaceholders).map(([k,v]) => `
-    <div class="soa-ph-row">
-      <span class="ph-tag">{{${k}}}</span>
-      <input class="field-input" type="text" value="${v.replace(/"/g,'&quot;')}" oninput="soaPlaceholders['${k}']=this.value" style="max-width:300px">
-      <button class="rm-btn" onclick="delete soaPlaceholders['${k}'];soaRenderPhs()">✕</button>
+function soaRefreshPhPreview() {
+  const el      = document.getElementById('soa-ph-preview');
+  const emptyEl = document.getElementById('soa-ph-empty-msg');
+  if (!el) return;
+  const active = state.placeholders.filter(p => p.enabled && state.values[p.key]);
+  if (!active.length) {
+    el.innerHTML = '<span style="color:var(--muted);font-size:11px;align-self:center" id="soa-ph-empty-msg">No placeholders defined yet — go to Fill Fields tab to add them.</span>';
+    return;
+  }
+  el.innerHTML = active.map(p => `
+    <div style="display:flex;align-items:center;gap:5px;background:var(--s3);border-radius:4px;padding:3px 8px">
+      <span style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--accent)">{{${p.key}}}</span>
+      <span style="color:var(--dim);font-size:10px">→</span>
+      <span style="font-size:11px;color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${state.values[p.key]}</span>
     </div>`).join('');
 }
 
@@ -1482,10 +1589,10 @@ function esc(v) {
   return (v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Apply {{placeholders}} substitution to a string
+// Apply {{placeholders}} substitution using Fill Fields state.values as single source of truth
 function applyPhs(text) {
   if (!text) return '';
-  return text.replace(/\{\{([^}]+)\}\}/g, (m, key) => soaPlaceholders[key] !== undefined ? soaPlaceholders[key] : m);
+  return text.replace(/\{\{([^}]+)\}\}/g, (m, key) => state.values[key] !== undefined ? state.values[key] : m);
 }
 
 // ── Export to Excel ──────────────────────────────────────────────
@@ -1506,23 +1613,50 @@ async function soaExport() {
     'scope_out_text_insurance','scope_out_text_investments','scope_out_text_super',
     'scope_out_text_debt','scope_out_text_retirement','scope_out_text_estate',
     'scope_out_text_cashflow','scope_out_text_social',
-    'ors_text','implementation_text','important_relationships_text'
+    'ors_text','implementation_text'
   ];
+
+  const soaRow = { soa_id: soaId, client_entity_id: entityId };
+
+  // All fields via soaGetAllFields
+  const allFields = soaGetAllFields();
+  Object.assign(soaRow, allFields);
 
   // Auto-set scope in/out checkboxes based on text presence
   const scopeKeys = ['insurance','investments','super','debt','retirement','estate','cashflow','social'];
   scopeKeys.forEach(key => {
     const inText  = (document.getElementById('scope_in_text_'  + key) || {}).value || '';
     const outText = (document.getElementById('scope_out_text_' + key) || {}).value || '';
-    if (inText.trim())  soaRow['scope_in_'  + key] = 'TRUE';
-    if (outText.trim()) soaRow['scope_out_' + key] = 'TRUE';
+    if (inText.trim())  soaRow['scope_in_'  + key] = true;
+    if (outText.trim()) soaRow['scope_out_' + key] = true;
   });
 
-  const soaRow = { soa_id: soaId, client_entity_id: entityId };
-  soaTextFields.forEach(id => {
+  // Collect fee-level fields
+  const feeIds = ['fee_ap_client','fee_imp_client','fee_ong_client',
+    'fee_ap_partner','fee_imp_partner','fee_ong_partner',
+    'fee_ap_joint','fee_imp_joint','fee_ong_joint',
+    'fee_ap_linked','fee_imp_linked','fee_ong_linked'];
+  feeIds.forEach(id => {
     const el = document.getElementById(id);
     soaRow[id] = el ? applyPhs(el.value) : '';
   });
+
+  // Map fee_ap_client etc to template column names
+  const feeKeyMap = {
+    fee_ap_client: 'fd_advice_prep_fee', fee_imp_client: 'fd_implementation_fee', fee_ong_client: 'fd_ongoing_advice_fee',
+    fee_ap_partner: 'fee_ap_partner', fee_imp_partner: 'fee_imp_partner', fee_ong_partner: 'fee_ong_partner',
+    fee_ap_joint: 'fee_ap_joint', fee_imp_joint: 'fee_imp_joint', fee_ong_joint: 'fee_ong_joint',
+    fee_ap_linked: 'fee_ap_linked', fee_imp_linked: 'fee_imp_linked', fee_ong_linked: 'fee_ong_linked',
+  };
+  Object.entries(feeKeyMap).forEach(([from, to]) => { if (soaRow[from]) { soaRow[to] = soaRow[from]; delete soaRow[from]; } });
+
+  // Fee who checkboxes
+  ['client','partner','joint','linked'].forEach(k => {
+    const cb = document.getElementById('fee_who_' + k);
+    soaRow['fee_who_' + k] = cb && cb.checked ? 'TRUE' : 'FALSE';
+  });
+
+
 
   // Build strategy rows
   const stratRows = soaStrategies.map((s, i) => {
@@ -1546,9 +1680,33 @@ async function soaExport() {
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{}]), 'Strategies');
   }
 
-  // Empty placeholder sheets for products and fees
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{}]), 'Investment Products');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{}]), 'Fee Disclosure');
+  // Investment Products sheet
+  const invRows = soaInvProducts.map((p, i) => ({
+    soa_id: soaId, product_number: i + 1,
+    who_for: p.who_for, provider: p.provider, product: p.product,
+    product_name: p.product_name, priority: p.priority,
+    our_recommendation:  applyPhs(p.our_recommendation),
+    why_appropriate:     applyPhs(p.why_appropriate),
+    what_to_consider:    applyPhs(p.what_to_consider),
+    alt_product_details: applyPhs(p.alt_product),
+    reasons_discounted:  applyPhs(p.reasons_discounted),
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(invRows.length ? invRows : [{}]), 'Investment Products');
+
+  // Fee Disclosure sheet — one row per product fee row
+  const feeRows = soaFeeRows.map((f, i) => ({
+    soa_id:             soaId,
+    row_number:         i + 1,
+    product_type:       f.product_type,
+    product_owner:      f.product_owner,
+    product_name:       f.product_name,
+    initial_commission: f.initial_commission,
+    ongoing_commission: f.ongoing_commission,
+    premium:            f.premium,
+    base_premium:       f.base_premium,
+
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(feeRows.length ? feeRows : [{}]), 'Fee Disclosure');
 
   // Download
   XLSX.writeFile(wb, `${soaId}_data.xlsx`);
@@ -1565,36 +1723,62 @@ function loadScript(src) {
 
 // ── Save / Load draft ────────────────────────────────────────────
 function soaSave() {
-  const draft = {
-    soa_id: document.getElementById('soa_id').value,
-    client_entity_id: document.getElementById('client_entity_id').value,
-    placeholders: soaPlaceholders,
-    strategies: soaStrategies,
-    fields: {}
-  };
-  ['scope_in_text_insurance','scope_in_text_investments','scope_in_text_super',
-   'scope_in_text_debt','scope_in_text_retirement','scope_in_text_estate',
-   'scope_in_text_cashflow','scope_in_text_social',
-   'scope_out_text_insurance','scope_out_text_investments','scope_out_text_super',
-   'scope_out_text_debt','scope_out_text_retirement','scope_out_text_estate',
-   'scope_out_text_cashflow','scope_out_text_social',
-   'ors_text','implementation_text','important_relationships_text'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) draft.fields[id] = el.value;
+  const soa_id = document.getElementById('soa_id').value.trim() || 'soa';
+  const feeInputIds = ['fee_ap_client','fee_imp_client','fee_ong_client',
+    'fee_ap_partner','fee_imp_partner','fee_ong_partner',
+    'fee_ap_joint','fee_imp_joint','fee_ong_joint',
+    'fee_ap_linked','fee_imp_linked','fee_ong_linked'];
+  const feeInputs = {};
+  feeInputIds.forEach(id => { const el = document.getElementById(id); if (el) feeInputs[id] = el.value; });
+  const feeCheckboxes = {};
+  ['client','partner','joint','linked'].forEach(k => {
+    const cb = document.getElementById('fee_who_' + k);
+    feeCheckboxes['fee_who_' + k] = cb ? cb.checked : true;
   });
-  downloadJSON(draft, `${draft.soa_id||'soa'}_draft.json`);
+  const draft = {
+    soa_id:           document.getElementById('soa_id').value,
+    client_entity_id: document.getElementById('client_entity_id').value,
+    placeholders:     Object.assign({}, state.values),
+    strategies:       soaStrategies,
+    invProducts:      soaInvProducts,
+    feeRows:          soaFeeRows,
+    feeInputs,
+    feeCheckboxes,
+    fields:           soaGetAllFields(),
+  };
+  downloadJSON(draft, `${soa_id}_soa.json`);
 }
 
 function soaLoad() {
   uploadJSON(draft => {
-    if (draft.soa_id) document.getElementById('soa_id').value = draft.soa_id;
+    if (draft.soa_id)           document.getElementById('soa_id').value = draft.soa_id;
     if (draft.client_entity_id) document.getElementById('client_entity_id').value = draft.client_entity_id;
-    if (draft.placeholders) { soaPlaceholders = draft.placeholders; soaRenderPhs(); }
-    if (draft.strategies)   { soaStrategies   = draft.strategies;   soaRenderStrategies(); }
+
+    // Restore placeholders into Fill Fields state.values
+    if (draft.placeholders) {
+      Object.assign(state.values, draft.placeholders);
+      Object.entries(draft.placeholders).forEach(([key, val]) => {
+        const el = document.getElementById('val-' + key);
+        if (el) el.value = val;
+        if (!state.placeholders.find(p => p.key === key)) {
+          state.placeholders.push({ key, enabled: true, section: guessSection(key) });
+        }
+      });
+      soaRefreshPhPreview();
+    }
+
+    if (draft.strategies)    { soaStrategies = draft.strategies; soaRenderStrategies(); }
+    if (draft.invProducts)   { soaInvProducts = draft.invProducts; soaRenderInvProducts(); }
+    if (draft.feeRows)       { soaFeeRows = draft.feeRows; soaRenderFeeRows(); }
+    if (draft.feeInputs)     Object.entries(draft.feeInputs).forEach(([id,v]) => { const el = document.getElementById(id); if (el) el.value = v; });
+    if (draft.feeCheckboxes) Object.entries(draft.feeCheckboxes).forEach(([id,v]) => { const el = document.getElementById(id); if (el) el.checked = v; });
     if (draft.fields) {
       Object.entries(draft.fields).forEach(([id, val]) => {
         const el = document.getElementById(id);
-        if (el) el.value = val;
+        if (el) {
+          el.value = val;
+  
+        }
       });
     }
   });
@@ -1602,10 +1786,21 @@ function soaLoad() {
 
 function soaClear() {
   if (!confirm('Clear all SOA export data?')) return;
-  soaPlaceholders = {};
-  soaStrategies   = [];
-  soaRenderPhs();
+  soaStrategies  = [];
+  soaInvProducts = [];
+  soaFeeRows     = [];
   soaRenderStrategies();
+  soaRenderInvProducts();
+  soaRenderFeeRows();
+  ['fee_ap_client','fee_imp_client','fee_ong_client',
+   'fee_ap_partner','fee_imp_partner','fee_ong_partner',
+   'fee_ap_joint','fee_imp_joint','fee_ong_joint',
+   'fee_ap_linked','fee_imp_linked','fee_ong_linked',
+   ].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  ['client','partner','joint','linked'].forEach(k => { const cb = document.getElementById('fee_who_' + k); if (cb) cb.checked = true; });
+
   ['soa_id','client_entity_id',
    'scope_in_text_insurance','scope_in_text_investments','scope_in_text_super',
    'scope_in_text_debt','scope_in_text_retirement','scope_in_text_estate',
@@ -1613,75 +1808,186 @@ function soaClear() {
    'scope_out_text_insurance','scope_out_text_investments','scope_out_text_super',
    'scope_out_text_debt','scope_out_text_retirement','scope_out_text_estate',
    'scope_out_text_cashflow','scope_out_text_social',
-   'ors_text','implementation_text','important_relationships_text'].forEach(id => {
+   'ors_text','implementation_text'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
 }
 
 // ── Granular save / load ────────────────────────────────────────
-function soaSavePh() {
-  downloadJSON({ placeholders: soaPlaceholders }, 'soa_placeholders.json');
-}
-
-function soaLoadPh() {
-  uploadJSON(data => {
-    const phs = data.placeholders || data;
-    if (typeof phs === 'object' && !Array.isArray(phs)) {
-      Object.assign(soaPlaceholders, phs);
-    }
-    soaRenderPhs();
-  });
-}
+// Placeholders are now managed via Fill Fields tab (state.values) — save/load them there
 
 function soaGetAllFields() {
   const allIds = [
-    'soa_id','client_entity_id',
+    // Meta
+    'soa_id','client_entity_id','date_of_soa',
+    // Formatting dropdowns
+    'title_page_image','section_break_images','soa_colour_scheme','soa_footer',
+    'naming_convention','executive_summary','soa_type',
+    'include_coverletter','include_custom_cover_letter','advice_signature_options',
+    'include_goals_icons','include_implementation_page','soa_incomplete_information',
+    'current_scenario_place','include_product_recommendations',
+    'include_custom_scope','include_scope_reasons','include_scope_out_section',
+    // Risk profile
+    'risk_profile_client','risk_profile_partner','risk_profile_joint',
+    // Xplan content sources
+    'rr_source','ws_source',
+    // Outcomes
+    'soa_funding_insurance','include_xtools_chart','supporting_calcs','retirement_analysis','bps_myg',
+    // Replacement products
+    'replacing_investment','replacing_insurance','inc_fee_agg',
+    // ORS + implementation
+    'charging_ors','ors_text','implementation_text',
+    // Flyers
+    'include_educational_flyers',
+    // Alt products
+    'include_alt_products',
+    // Scope text
     'scope_in_text_insurance','scope_in_text_investments','scope_in_text_super',
     'scope_in_text_debt','scope_in_text_retirement','scope_in_text_estate',
     'scope_in_text_cashflow','scope_in_text_social',
     'scope_out_text_insurance','scope_out_text_investments','scope_out_text_super',
     'scope_out_text_debt','scope_out_text_retirement','scope_out_text_estate',
     'scope_out_text_cashflow','scope_out_text_social',
-    'ors_text','implementation_text','important_relationships_text'
   ];
   const fields = {};
   allIds.forEach(id => {
     const el = document.getElementById(id);
-    if (el) fields[id] = el.value;
+    if (el) fields[id] = el.tagName === 'SELECT' ? el.value : el.value;
   });
+
+  // Checkboxes
+  const cbIds = [
+    're_client','re_partner','re_joint','re_linked',
+    'scope_in_insurance','scope_in_investments','scope_in_super','scope_in_debt',
+    'scope_in_retirement','scope_in_estate','scope_in_cashflow','scope_in_social',
+    'scope_out_insurance','scope_out_investments','scope_out_super','scope_out_debt',
+    'scope_out_retirement','scope_out_estate','scope_out_cashflow','scope_out_social',
+    'module_portfolio','module_rr','module_ws','module_xtools',
+    'rr_needs_analysis','rr_auto_gains','rr_alt_insurance','rr_auto_fee',
+    'rr_product_comparison','rr_replace_compare','rr_premium_comparison',
+    'rr_product_summary','rr_compare_diff','rr_compare_ratings','rr_pds',
+    'ws_product_table_full','ws_product_table_nozero','ws_product_table_fee_full',
+    'ws_product_table_fee_nozero','ws_inv_rec','ws_asset_alloc','ws_super_comparison',
+    'ws_alt_products','ws_auto_fee','ws_auto_fee_detail','ws_tables_final_bal',
+    'ws_tables_like_for_like','ws_pds',
+    'insur_premiums_increase','insur_higher_policy_fees',
+    'insur_tpd_super','insur_tpd_own','insur_ip_super','insur_cashflow',
+    'insur_uw_loading','insur_uw_excl','insur_cancelled','insur_cheaper',
+    'insur_preexisting','insur_suicide','insur_auto_accept','insur_waiting',
+    'insur_trauma','insur_no_loss','insur_disability','insur_cgt','insur_no_conseq',
+    'impl_pds','impl_forms','impl_steps','impl_id_docs','impl_follow_plan','impl_portfolio',
+    'fee_who_client','fee_who_partner','fee_who_joint','fee_who_linked',
+    'flyer_debt_mgmt','flyer_debt_recycling','flyer_redundancy','flyer_salary_packaging','flyer_budget',
+    'flyer_dca','flyer_etf','flyer_gearing','flyer_income_stream','flyer_inv_bond',
+    'flyer_inv_risks','flyer_inv_general','flyer_mda','flyer_margin_lending','flyer_sma',
+    'flyer_abp','flyer_annuities','flyer_super','flyer_tbc_index','flyer_tbc','flyer_ttr',
+    'flyer_smsf','flyer_smsf_strategy','flyer_smsf_lrba',
+    'flyer_ncc','flyer_cc','flyer_downsizer','flyer_recontrib','flyer_salary_sac','flyer_spouse_contrib',
+    'flyer_biz_expense','flyer_biz_protection','flyer_personal_ins',
+    'flyer_age_pension','flyer_carer_allowance','flyer_carer_payment','flyer_centrelink',
+    'flyer_seniors_card','flyer_dsp','flyer_dva','flyer_ftb','flyer_gifting','flyer_granny_flat','flyer_jobseeker',
+    'flyer_cgt','flyer_small_biz_tax','flyer_taxation',
+    'flyer_estate','flyer_aged_care','flyer_funeral_bonds','flyer_trusts',
+  ];
+  cbIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) fields[id] = el.checked;
+  });
+
+  // Fee inputs
+  ['fee_ap_client','fee_imp_client','fee_ong_client',
+   'fee_ap_partner','fee_imp_partner','fee_ong_partner',
+   'fee_ap_joint','fee_imp_joint','fee_ong_joint',
+   'fee_ap_linked','fee_imp_linked','fee_ong_linked'].forEach(id => {
+    const el = document.getElementById(id); if (el) fields[id] = el.value;
+  });
+
   return fields;
 }
 
 function soaSetAllFields(fields) {
   Object.entries(fields).forEach(([id, val]) => {
     const el = document.getElementById(id);
-    if (el) {
+    if (!el) return;
+    if (el.type === 'checkbox') {
+      el.checked = val === true || val === 'true' || val === 'TRUE';
+    } else {
       el.value = val;
-      // Refresh scope badges for scope fields
-      const m = id.match(/^scope_(?:in|out)_text_(.+)$/);
-      if (m) updateScopeBadge(m[1]);
     }
   });
 }
 
-function soaSaveFields() {
-  const soa_id = document.getElementById('soa_id').value.trim() || 'soa';
-  downloadJSON({
-    fields:     soaGetAllFields(),
-    strategies: soaStrategies,
-  }, `${soa_id}_fields.json`);
+
+
+
+// ── Investment Products ──────────────────────────────────────────
+let soaInvProducts = [];
+
+function soaAddInvProduct() {
+  soaInvProducts.push({
+    priority: '', who_for: '', provider: '', product: '', product_name: '',
+    our_recommendation: '', why_appropriate: '', what_to_consider: '',
+    alt_product: '', reasons_discounted: ''
+  });
+  soaRenderInvProducts();
 }
 
-function soaLoadFields() {
-  uploadJSON(data => {
-    if (data.fields)     soaSetAllFields(data.fields);
-    if (data.strategies) { soaStrategies = data.strategies; soaRenderStrategies(); }
-  });
+function soaRenderInvProducts() {
+  const el = document.getElementById('soa-inv-products');
+  if (!el) return;
+  if (!soaInvProducts.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 2px">No investment products yet.</div>';
+    return;
+  }
+  const providers = ['','Asgard','Ausiex','BT Panorama','Colonial First State','Expand','HUB24','Macquarie','MLC','netwealth','OneVue','Praemium'];
+  el.innerHTML = soaInvProducts.map((p, i) => `
+    <div style="background:var(--s2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700;font-size:11px;color:var(--accent)">
+        Product ${i+1} <span style="font-weight:400;color:var(--muted)">${p.product_name||'(unnamed)'}</span>
+        <button class="rm-btn" style="margin-left:auto" onclick="soaInvProducts.splice(${i},1);soaRenderInvProducts()">✕ Remove</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
+        <div class="soa-strat-field"><label>Priority</label>
+          <select oninput="soaInvProducts[${i}].priority=this.value" style="background:var(--s1);border:1px solid var(--border);color:var(--text);font-size:12px;padding:4px 7px;border-radius:4px;width:100%">
+            ${[1,2,3,4,5,6,7,8,9].map(n=>`<option ${p.priority==n?'selected':''}>${n}</option>`).join('')}
+          </select>
+        </div>
+        <div class="soa-strat-field"><label>Who For</label>
+          <select oninput="soaInvProducts[${i}].who_for=this.value" style="background:var(--s1);border:1px solid var(--border);color:var(--text);font-size:12px;padding:4px 7px;border-radius:4px;width:100%">
+            ${['','Client','Partner','Joint'].map(o=>`<option ${p.who_for===o?'selected':''}>${o}</option>`).join('')}
+          </select>
+        </div>
+        <div class="soa-strat-field"><label>Provider</label>
+          <select oninput="soaInvProducts[${i}].provider=this.value" style="background:var(--s1);border:1px solid var(--border);color:var(--text);font-size:12px;padding:4px 7px;border-radius:4px;width:100%">
+            ${['','Asgard','Ausiex','BT Panorama','Colonial First State','Expand','HUB24','Macquarie','MLC','netwealth','OneVue','Praemium'].map(o=>`<option ${p.provider===o?'selected':''}>${o}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+        <div class="soa-strat-field"><label>Product</label><input type="text" value="${esc(p.product)}" oninput="soaInvProducts[${i}].product=this.value" placeholder="Match Xplan dropdown"></div>
+        <div class="soa-strat-field"><label>Product Name</label><input type="text" value="${esc(p.product_name)}" oninput="soaInvProducts[${i}].product_name=this.value;soaRenderInvProductLabel(${i},this.value)"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr;gap:6px">
+        <div class="soa-strat-field"><label>Our Recommendation</label><textarea rows="3" oninput="soaInvProducts[${i}].our_recommendation=this.value">${esc(p.our_recommendation)}</textarea></div>
+        <div class="soa-strat-field"><label>Why Our Advice Is Appropriate</label><textarea rows="3" oninput="soaInvProducts[${i}].why_appropriate=this.value">${esc(p.why_appropriate)}</textarea></div>
+        <div class="soa-strat-field"><label>What You Need to Consider</label><textarea rows="3" oninput="soaInvProducts[${i}].what_to_consider=this.value">${esc(p.what_to_consider)}</textarea></div>
+        <div class="soa-strat-field"><label>Alternative Product Details</label><textarea rows="2" oninput="soaInvProducts[${i}].alt_product=this.value" placeholder="• Alt 1&#10;• Alt 2">${esc(p.alt_product)}</textarea></div>
+        <div class="soa-strat-field"><label>Reasons Discounted</label><textarea rows="2" oninput="soaInvProducts[${i}].reasons_discounted=this.value">${esc(p.reasons_discounted)}</textarea></div>
+      </div>
+    </div>`).join('');
+}
+
+function soaRenderInvProductLabel(i, val) {
+  const rows = document.querySelectorAll('#soa-inv-products > div');
+  if (rows[i]) { const s = rows[i].querySelector('span'); if (s) s.textContent = val || '(unnamed)'; }
 }
 
 // Init SOA panel
 soaRenderStrategies();
+soaRenderInvProducts();
+soaRenderFeeRows();
+soaRefreshPhPreview();
 
 // ── Init ──────────────────────────────────────────────────────────
 renderFileList();
