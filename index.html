@@ -445,10 +445,30 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
         <!-- ── INVESTMENT RECOMMENDATIONS ── -->
         <div class="soa-section-hdr" style="background:#1A5276;margin-top:14px">Investment Recommendations <button class="btn btn-grey btn-sm" style="margin-left:auto;font-size:10px" onclick="soaAddInvProduct()">+ Add Product</button></div>
-        <div class="soa-grid" style="margin-bottom:8px">
-<div class="soa-field"><label>Include Alternative Products</label><select id="include_alt_products" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="Yes">Yes</option><option value="No">No</option></select></div>
-        </div>
+
         <div id="soa-inv-products"></div>
+
+        <!-- ── ALTERNATIVE STRATEGIES ── -->
+        <div class="soa-section-hdr" style="background:#1E5631;margin-top:14px">Alternative Strategies</div>
+        <div class="soa-grid" style="margin:6px 0 6px">
+          <div class="soa-field"><label>Include Alternative Strategies</label><select id="include_alt_strats" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="">— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin:-2px 0 8px">Single entry — always priority 1. Maps to <code style="color:var(--accent)">entity:ppd_soa_alt_strat_details:0:</code></div>
+        <div class="soa-field wide" style="padding:0 2px;margin-bottom:4px">
+          <label>Alternative Strategies Text</label>
+          <textarea id="alt_strat_details" rows="5" style="width:100%;background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:6px 9px;border-radius:4px;resize:vertical" placeholder="• Alternative 1 — description&#10;• Alternative 2 — description&#10;Use Alt+Enter for line breaks. **bold** ~~green~~ supported."></textarea>
+        </div>
+
+        <!-- ── ALTERNATIVE PRODUCTS ── -->
+        <div class="soa-section-hdr" style="background:#145A32;margin-top:14px">Alternative Products</div>
+        <div class="soa-grid" style="margin:6px 0 6px">
+          <div class="soa-field"><label>Include Alternative Products</label><select id="include_alt_products" style="background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:5px 8px;border-radius:4px;width:100%"><option value="">— select —</option><option value="Yes">Yes</option><option value="No">No</option></select></div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin:-2px 0 8px">Single entry — always priority 1. Maps to <code style="color:var(--accent)">entity:ppdsoa_soa_alt_product:0:</code></div>
+        <div class="soa-field wide" style="padding:0 2px;margin-bottom:4px">
+          <label>Alternative Products Text</label>
+          <textarea id="alt_product_details" rows="5" style="width:100%;background:var(--s2);border:1px solid var(--border);outline:none;color:var(--text);font-family:DM Sans,sans-serif;font-size:12px;padding:6px 9px;border-radius:4px;resize:vertical" placeholder="• Alternative 1 — description&#10;• Alternative 2 — description&#10;Use Alt+Enter for line breaks. **bold** ~~green~~ supported."></textarea>
+        </div>
 
         <!-- ── REPLACEMENT PRODUCTS ── -->
         <div class="soa-section-hdr" style="background:#922B21;margin-top:14px">Replacement Products</div>
@@ -1536,7 +1556,7 @@ function soaAddStrategy() {
   soaStrategies.push({
     heading:'', who_for:'', type:'', strategy:'',
     our_recommendation:'', why_appropriate:'', what_to_consider:'',
-    implementation:'', outcome:'', alt_strat_details:'',
+    implementation:'', outcome:'',
     policy_ownership:'', waiting_benefit_period:'', premium_type:'',
     occupation_type:'', cancellable:'', notes:''
   });
@@ -1566,7 +1586,7 @@ function soaRenderStrategies() {
         <div class="soa-strat-field wide"><label>What You Need to Consider</label><textarea rows="3" oninput="soaStrategies[${i}].what_to_consider=this.value">${esc(s.what_to_consider)}</textarea></div>
         <div class="soa-strat-field wide"><label>Implementation</label><textarea rows="3" oninput="soaStrategies[${i}].implementation=this.value">${esc(s.implementation)}</textarea></div>
         <div class="soa-strat-field wide"><label>Outcome</label><textarea rows="3" oninput="soaStrategies[${i}].outcome=this.value">${esc(s.outcome)}</textarea></div>
-        <div class="soa-strat-field wide"><label>Alternative Strategy Details (bullet points)</label><textarea rows="3" oninput="soaStrategies[${i}].alt_strat_details=this.value" placeholder="• Alternative 1&#10;• Alternative 2">${esc(s.alt_strat_details)}</textarea></div>
+
         <div class="soa-strat-field"><label>Policy Ownership (insurance)</label><textarea rows="2" oninput="soaStrategies[${i}].policy_ownership=this.value">${esc(s.policy_ownership)}</textarea></div>
         <div class="soa-strat-field"><label>Waiting &amp; Benefit Period</label><textarea rows="2" oninput="soaStrategies[${i}].waiting_benefit_period=this.value">${esc(s.waiting_benefit_period)}</textarea></div>
         <div class="soa-strat-field"><label>Premium Type</label><textarea rows="2" oninput="soaStrategies[${i}].premium_type=this.value">${esc(s.premium_type)}</textarea></div>
@@ -1616,7 +1636,11 @@ async function soaExport() {
     'ors_text','implementation_text'
   ];
 
-  const soaRow = { soa_id: soaId, client_entity_id: entityId };
+  const soaRow = {
+    soa_id: soaId, client_entity_id: entityId,
+    alt_strat_details:   altStratText,
+    alt_product_details: altProductText,
+  };
 
   // All fields via soaGetAllFields
   const allFields = soaGetAllFields();
@@ -1681,6 +1705,10 @@ async function soaExport() {
   }
 
   // Investment Products sheet
+  // Alt strat and alt product — single entries, priority always 1
+  const altStratText   = applyPhs((document.getElementById('alt_strat_details')   || {}).value || '');
+  const altProductText = applyPhs((document.getElementById('alt_product_details') || {}).value || '');
+
   const invRows = soaInvProducts.map((p, i) => ({
     soa_id: soaId, product_number: i + 1,
     who_for: p.who_for, provider: p.provider, product: p.product,
@@ -1688,8 +1716,6 @@ async function soaExport() {
     our_recommendation:  applyPhs(p.our_recommendation),
     why_appropriate:     applyPhs(p.why_appropriate),
     what_to_consider:    applyPhs(p.what_to_consider),
-    alt_product_details: applyPhs(p.alt_product),
-    reasons_discounted:  applyPhs(p.reasons_discounted),
   }));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(invRows.length ? invRows : [{}]), 'Investment Products');
 
@@ -1814,6 +1840,7 @@ function soaClear() {
    'scope_out_text_insurance','scope_out_text_investments','scope_out_text_super',
    'scope_out_text_debt','scope_out_text_retirement','scope_out_text_estate',
    'scope_out_text_cashflow','scope_out_text_social',
+   'alt_strat_details','alt_product_details',
    'ors_text','implementation_text'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -1876,6 +1903,9 @@ function soaGetAllFields() {
     'risk_profile_client','risk_profile_partner','risk_profile_joint',
     // Xplan content sources
     'rr_source','ws_source',
+    // Alternative strategies and products
+    'include_alt_strats','include_alt_products',
+    'alt_strat_details','alt_product_details',
     // Outcomes
     'soa_funding_insurance','include_xtools_chart','supporting_calcs','retirement_analysis','bps_myg',
     // Replacement products
@@ -1884,8 +1914,6 @@ function soaGetAllFields() {
     'charging_ors','ors_text','implementation_text',
     // Flyers
     'include_educational_flyers',
-    // Alt products
-    'include_alt_products',
     // Scope text
     'scope_in_text_insurance','scope_in_text_investments','scope_in_text_super',
     'scope_in_text_debt','scope_in_text_retirement','scope_in_text_estate',
@@ -1971,8 +1999,7 @@ let soaInvProducts = [];
 function soaAddInvProduct() {
   soaInvProducts.push({
     priority: '', who_for: '', provider: '', product: '', product_name: '',
-    our_recommendation: '', why_appropriate: '', what_to_consider: '',
-    alt_product: '', reasons_discounted: ''
+    our_recommendation: '', why_appropriate: '', what_to_consider: ''
   });
   soaRenderInvProducts();
 }
@@ -2016,8 +2043,7 @@ function soaRenderInvProducts() {
         <div class="soa-strat-field"><label>Our Recommendation</label><textarea rows="3" oninput="soaInvProducts[${i}].our_recommendation=this.value">${esc(p.our_recommendation)}</textarea></div>
         <div class="soa-strat-field"><label>Why Our Advice Is Appropriate</label><textarea rows="3" oninput="soaInvProducts[${i}].why_appropriate=this.value">${esc(p.why_appropriate)}</textarea></div>
         <div class="soa-strat-field"><label>What You Need to Consider</label><textarea rows="3" oninput="soaInvProducts[${i}].what_to_consider=this.value">${esc(p.what_to_consider)}</textarea></div>
-        <div class="soa-strat-field"><label>Alternative Product Details</label><textarea rows="2" oninput="soaInvProducts[${i}].alt_product=this.value" placeholder="• Alt 1&#10;• Alt 2">${esc(p.alt_product)}</textarea></div>
-        <div class="soa-strat-field"><label>Reasons Discounted</label><textarea rows="2" oninput="soaInvProducts[${i}].reasons_discounted=this.value">${esc(p.reasons_discounted)}</textarea></div>
+
       </div>
     </div>`).join('');
 }
