@@ -1546,20 +1546,25 @@ function soaRenderFeeRowLabel(i, val) {
 }
 
 function soaRefreshPhPreview() {
-  const el      = document.getElementById('soa-ph-preview');
-  const emptyEl = document.getElementById('soa-ph-empty-msg');
+  const el = document.getElementById('soa-ph-preview');
   if (!el) return;
-  const active = state.placeholders.filter(p => p.enabled && state.values[p.key]);
+  // Show all enabled placeholders — value may be empty (shown as grey)
+  const active = state.placeholders.filter(p => p.enabled);
   if (!active.length) {
     el.innerHTML = '<span style="color:var(--muted);font-size:11px;align-self:center" id="soa-ph-empty-msg">No placeholders defined yet — go to Fill Fields tab to add them.</span>';
     return;
   }
-  el.innerHTML = active.map(p => `
-    <div style="display:flex;align-items:center;gap:5px;background:var(--s3);border-radius:4px;padding:3px 8px">
-      <span style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--accent)">{{${p.key}}}</span>
+  el.innerHTML = active.map(p => {
+    const val     = state.values[p.key] || '';
+    const hasVal  = val.length > 0;
+    const display = hasVal ? val : '(empty)';
+    const valColor = hasVal ? 'var(--text)' : 'var(--muted)';
+    return `<div style="display:flex;align-items:center;gap:5px;background:var(--s3);border-radius:4px;padding:3px 8px;margin:1px 0">
+      <span style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--accent);white-space:nowrap">{{${p.key}}}</span>
       <span style="color:var(--dim);font-size:10px">→</span>
-      <span style="font-size:11px;color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${state.values[p.key]}</span>
-    </div>`).join('');
+      <span style="font-size:11px;color:${valColor};max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:${hasVal?'normal':'italic'}">${display}</span>
+    </div>`;
+  }).join('');
 }
 
 function soaAddStrategy() {
