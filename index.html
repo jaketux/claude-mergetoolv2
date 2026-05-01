@@ -1510,10 +1510,10 @@ function soaRenderFeeRows() {
         <div class="soa-strat-field"><label>Product Name</label><input type="text" value="${esc(f.product_name)}" oninput="soaFeeRows[${i}].product_name=this.value;soaRenderFeeRowLabel(${i},this.value)" placeholder="Free text"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
-        <div class="soa-strat-field"><label>Initial Commission ($)</label><input type="number" value="${esc(f.initial_commission)}" oninput="soaFeeRows[${i}].initial_commission=this.value" placeholder="0"></div>
-        <div class="soa-strat-field"><label>Ongoing Commission ($)</label><input type="number" value="${esc(f.ongoing_commission)}" oninput="soaFeeRows[${i}].ongoing_commission=this.value" placeholder="0"></div>
-        <div class="soa-strat-field"><label>Premium ($)</label><input type="number" value="${esc(f.premium)}" oninput="soaFeeRows[${i}].premium=this.value" placeholder="0"></div>
-        <div class="soa-strat-field"><label>Base Premium ($)</label><input type="number" value="${esc(f.base_premium)}" oninput="soaFeeRows[${i}].base_premium=this.value" placeholder="0"></div>
+        <div class="soa-strat-field"><label>Initial Commission (%)</label><input type="number" value="${esc(f.initial_commission)}" oninput="soaFeeRows[${i}].initial_commission=this.value" placeholder="0"></div>
+        <div class="soa-strat-field"><label>Ongoing Commission (%)</label><input type="number" value="${esc(f.ongoing_commission)}" oninput="soaFeeRows[${i}].ongoing_commission=this.value" placeholder="0"></div>
+        <div class="soa-strat-field"><label>Premium ($)</label><input type="text" value="${esc(f.premium)}" oninput="soaFeeRows[${i}].premium=this.value" placeholder="Auto-calculated from placeholder premiums — enter a value to override"></div>
+        <div class="soa-strat-field"><label>Base Premium ($)</label><input type="text" value="${esc(f.base_premium)}" oninput="soaFeeRows[${i}].base_premium=this.value" placeholder="Auto-calculated from placeholder premiums — enter a value to override"></div>
 
       </div>
     </div>`).join('');
@@ -1612,6 +1612,62 @@ function applyPhs(text) {
   return text.replace(/\{\{([^}]+)\}\}/g, (m, key) => state.values[key] !== undefined ? state.values[key] : m);
 }
 
+// ── Income tax helpers (AY 2025/26 — Stage 3 brackets) ───────────────────────
+function calcIncomeTax2526(income) {
+  if (!income || income <= 0) return 0;
+  let tax;
+  if      (income <= 18200)  tax = 0;
+  else if (income <= 45000)  tax = (income - 18200)  * 0.16;
+  else if (income <= 135000) tax = 4288  + (income - 45000)  * 0.30;
+  else if (income <= 190000) tax = 31288 + (income - 135000) * 0.37;
+  else                       tax = 51638 + (income - 190000) * 0.45;
+  // LITO
+  let lito = 0;
+  if      (income <= 37500)  lito = 700;
+  else if (income <= 45000)  lito = 700  - (income - 37500) * 0.05;
+  else if (income <= 66667)  lito = Math.max(0, 325 - (income - 45000) * 0.015);
+  // Medicare levy 2%
+  return Math.round(tax - lito + income * 0.02);
+}
+
+function calcSalSacTaxFields(salary, sacrifice) {
+  const s  = parseFloat(String(salary  || 0).replace(/[$,]/g, '')) || 0;
+  const ss = parseFloat(String(sacrifice || 0).replace(/[$,]/g, '')) || 0;
+  const sg = s * 0.12;  // SG at 12%
+  const taxCurrent  = calcIncomeTax2526(s);
+  const taxProposed = calcIncomeTax2526(s - ss);
+  const netCurrent  = Math.round(s - taxCurrent);
+  const netProposed = Math.round((s - ss) - taxProposed);
+  const contribTax  = Math.round(ss * 0.15);
+  // Additional Div 293: assessment income = salary + SG (unchanged by sacrifice),
+  // so only the sacrifice that sits above the SG's share of the excess is exposed.
+  const excess         = Math.max(0, s + sg - 250000);
+  const div293Extra    = Math.round(Math.max(0, Math.min(ss, Math.max(0, excess - sg))) * 0.15);
+  const taxSaving      = (taxCurrent - taxProposed) - contribTax - div293Extra;
+  return { taxCurrent, taxProposed, netCurrent, netProposed, taxSaving };
+}
+
+function evalFeeExpr(text, vals) {
+  if (!text && text !== 0) return 0;
+  const s = String(text);
+  if (!s.includes('{{')) return parseFloat(s.replace(/[$,]/g, '')) || 0;
+  return s.replace(/\{\{([^}]+)\}\}/g, (m, expr) => {
+    const ctx = {};
+    Object.entries(vals).forEach(([k, v]) => {
+      const n = parseFloat(String(v || 0).replace(/[$,]/g, ''));
+      ctx[k] = isNaN(n) ? 0 : n;
+    });
+    try {
+      let jsExpr = expr;
+      Object.keys(ctx).sort((a, b) => b.length - a.length).forEach(k => {
+        jsExpr = jsExpr.replace(new RegExp('\\b' + k + '\\b', 'g'), ctx[k]);
+      });
+      const result = Function('"use strict"; return (' + jsExpr + ')')();
+      return isNaN(result) ? 0 : Math.round(result);
+    } catch(e) { return 0; }
+  });
+}
+
 // ── Export to Excel ──────────────────────────────────────────────
 async function soaExport() {
   // We need SheetJS to write xlsx — load it if not already loaded
@@ -1642,6 +1698,21 @@ async function soaExport() {
   // All fields via soaGetAllFields
   const allFields = soaGetAllFields();
   Object.assign(soaRow, allFields);
+
+  // Salary sacrifice tax calculations (2025/26)
+  const clientTax  = calcSalSacTaxFields(state.values.client_salary,  state.values.client_recommended_salary_sacrifice);
+  soaRow.client_income_tax_current  = clientTax.taxCurrent;
+  soaRow.client_income_tax_proposed = clientTax.taxProposed;
+  soaRow.client_net_salary_current  = clientTax.netCurrent;
+  soaRow.client_net_salary_proposed = clientTax.netProposed;
+  soaRow.client_tax_saving          = clientTax.taxSaving;
+
+  const partnerTax = calcSalSacTaxFields(state.values.partner_salary, state.values.partner_recommended_salary_sacrifice);
+  soaRow.partner_income_tax_current  = partnerTax.taxCurrent;
+  soaRow.partner_income_tax_proposed = partnerTax.taxProposed;
+  soaRow.partner_net_salary_current  = partnerTax.netCurrent;
+  soaRow.partner_net_salary_proposed = partnerTax.netProposed;
+  soaRow.partner_tax_saving          = partnerTax.taxSaving;
 
   // Auto-set scope in/out checkboxes based on text presence
   const scopeKeys = ['insurance','investments','super','debt','retirement','estate','cashflow','social'];
@@ -1722,11 +1793,11 @@ async function soaExport() {
     row_number:         i + 1,
     product_type:       f.product_type,
     product_owner:      f.product_owner,
-    product_name:       f.product_name,
+    product_name:       applyPhs(f.product_name || ''),
     initial_commission: f.initial_commission,
     ongoing_commission: f.ongoing_commission,
-    premium:            f.premium,
-    base_premium:       f.base_premium,
+    premium:            evalFeeExpr(f.premium,      state.values),
+    base_premium:       evalFeeExpr(f.base_premium, state.values),
 
   }));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(feeRows.length ? feeRows : [{}]), 'Fee Disclosure');
