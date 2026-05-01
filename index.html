@@ -1844,9 +1844,6 @@ function soaSave() {
 
 function soaLoad() {
   uploadJSON(draft => {
-    if (draft.soa_id)           document.getElementById('soa_id').value = draft.soa_id;
-    if (draft.client_entity_id) document.getElementById('client_entity_id').value = draft.client_entity_id;
-
     // Restore placeholders into Fill Fields state
     if (draft.placeholders) {
       Object.entries(draft.placeholders).forEach(([key, val]) => {
@@ -1878,6 +1875,9 @@ function soaLoad() {
     if (draft.fields) {
       soaSetAllFields(draft.fields);
     }
+    // Apply top-level meta fields last so they win over any empty values in draft.fields
+    if (draft.soa_id)           document.getElementById('soa_id').value = draft.soa_id;
+    if (draft.client_entity_id) document.getElementById('client_entity_id').value = draft.client_entity_id;
     // Always refresh preview at end of load
     soaRefreshPhPreview();
   });
