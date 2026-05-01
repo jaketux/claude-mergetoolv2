@@ -1689,6 +1689,9 @@ async function soaExport() {
     'ors_text','implementation_text'
   ];
 
+  const altStratText   = applyPhs((document.getElementById('alt_strat_details')   || {}).value || '');
+  const altProductText = applyPhs((document.getElementById('alt_product_details') || {}).value || '');
+
   const soaRow = {
     soa_id: soaId, client_entity_id: entityId,
     alt_strat_details:   altStratText,
@@ -1773,10 +1776,6 @@ async function soaExport() {
   }
 
   // Investment Products sheet
-  // Alt strat and alt product — single entries, priority always 1
-  const altStratText   = applyPhs((document.getElementById('alt_strat_details')   || {}).value || '');
-  const altProductText = applyPhs((document.getElementById('alt_product_details') || {}).value || '');
-
   const invRows = soaInvProducts.map((p, i) => ({
     soa_id: soaId, product_number: i + 1,
     who_for: p.who_for, provider: p.provider, product: p.product,
