@@ -1702,6 +1702,9 @@ async function soaExport() {
   const allFields = soaGetAllFields();
   Object.assign(soaRow, allFields);
 
+  // Include all Fill Fields placeholder values so filler can resolve {{expr}} calculations
+  Object.assign(soaRow, state.values);
+
   // Salary sacrifice tax calculations (2025/26)
   const clientTax  = calcSalSacTaxFields(state.values.client_salary,  state.values.client_recommended_salary_sacrifice);
   soaRow.client_income_tax_current  = clientTax.taxCurrent;
