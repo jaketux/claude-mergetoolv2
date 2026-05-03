@@ -1231,15 +1231,19 @@ function mergeDocxXml(xml, values) {
     while ((tm = tRe.exec(para)) !== null) textParts.push(tm[1]);
     const fullText = textParts.join('');
 
-    // Only proceed if there's a resolvable placeholder in the concatenated text
-    if (!(/\{\{[a-z][a-z0-9_]*\}\}/i.test(fullText))) return para;
-    const hasKnownKey = Object.keys(values).some(k => fullText.includes(`{{${k}}}`));
-    if (!hasKnownKey) return para;
+    // Only proceed if there's a resolvable placeholder or expression in the concatenated text
+    if (!fullText.includes('{{')) return para;
+    const hasResolvable = Object.keys(values).some(k => fullText.includes(k));
+    if (!hasResolvable) return para;
 
-    // Replace all known placeholders in the assembled text
-    const replaced = fullText.replace(/\{\{([a-z][a-z0-9_]*)\}\}/gi, (m, key) =>
-      key in values ? escapeXml(String(values[key])) : m
-    );
+    // Replace all placeholders and arithmetic expressions
+    const replaced = fullText.replace(/\{\{([^}]+)\}\}/g, (m, inner) => {
+      const k = inner.trim();
+      if (k in values) return escapeXml(String(values[k]));
+      const n = evalDocxExpr(k, values);
+      if (n !== null) return escapeXml(fmtDocxNum(n));
+      return m;
+    });
 
     // Extract rPr formatting from the first run
     const firstRunMatch = para.match(/<w:r[ >][\s\S]*?<\/w:r>/);
@@ -1261,10 +1265,17 @@ function mergeDocxXml(xml, values) {
     });
   });
 
-  // Final pass: catch any intact {{key}} outside paragraphs (e.g. table cells)
-  xml = xml.replace(/\{\{([a-z][a-z0-9_]*)\}\}/gi, (match, key) => {
-    return key in values ? escapeXml(String(values[key])) : match;
+  // Final pass: catch any intact {{key}} or {{expr}} outside paragraphs (e.g. table cells)
+  xml = xml.replace(/\{\{([^}]+)\}\}/g, (match, inner) => {
+    const k = inner.trim();
+    if (k in values) return escapeXml(String(values[k]));
+    const n = evalDocxExpr(k, values);
+    if (n !== null) return escapeXml(fmtDocxNum(n));
+    return match;
   });
+
+  // Post-pass: colour Surplus / Shortfall row cells green (positive) or red (negative)
+  xml = colorSurplusShortfallRows(xml);
 
   return xml;
 }
@@ -1464,6 +1475,86 @@ function escapeXml(str) {
     .replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;')
     .replace(/'/g,'&apos;');
+}
+
+// Evaluate arithmetic {{expr}} for DOCX merge — safe AST-free evaluation
+function evalDocxExpr(expr, values) {
+  let e = expr.trim().replace(/[–—]/g, '-');
+  Object.keys(values).sort((a, b) => b.length - a.length).forEach(k => {
+    const n = parseFloat(String(values[k] || '0').replace(/[$,\s]/g, ''));
+    if (!isNaN(n)) e = e.replace(new RegExp('\\b' + k + '\\b', 'g'), n);
+  });
+  if (!/^[\d\s+\-*/().]+$/.test(e)) return null;
+  try {
+    const result = Function('"use strict"; return (' + e + ')')();
+    return (typeof result === 'number' && isFinite(result)) ? result : null;
+  } catch { return null; }
+}
+
+// Format a number as comma-separated integer (rounds to nearest whole number)
+function fmtDocxNum(n) {
+  const abs = Math.abs(Math.round(n));
+  const s = abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return n < 0 ? '-' + s : s;
+}
+
+// Inject a font colour into all text runs in a block of XML
+function addRunColor(xml, colorHex) {
+  return xml.replace(/<w:r[ >][\s\S]*?<\/w:r>/g, run => {
+    if (!run.includes('<w:t')) return run;
+    let r = run.replace(/<w:color[^/]*\/>/g, '').replace(/<w:color[\s\S]*?<\/w:color>/g, '');
+    if (/<w:rPr[ >]/.test(r)) return r.replace(/(<w:rPr[^>]*>)/, `$1<w:color w:val="${colorHex}"/>`);
+    return r.replace(/(<w:r[^>]*>)/, `$1<w:rPr><w:color w:val="${colorHex}"/></w:rPr>`);
+  });
+}
+
+// After expression evaluation, colour and reformat Surplus/Shortfall cells:
+//   positive value = shortfall → RED,   display as -$N,NNN
+//   negative value = surplus  → GREEN,  display as  $N,NNN (absolute value, no minus)
+function colorSurplusShortfallRows(xml) {
+  const GREEN = '34C759', RED = 'FF3B30';
+  return xml.replace(/<w:tr[ >][\s\S]*?<\/w:tr>/g, row => {
+    const cellRe = /<w:tc[ >][\s\S]*?<\/w:tc>/g;
+    const cells = []; let cm;
+    while ((cm = cellRe.exec(row)) !== null) cells.push({text: cm[0], idx: cm.index});
+    if (cells.length < 2) return row;
+    const firstText = cells[0].text.replace(/<[^>]+>/g, '').trim();
+    if (!firstText.includes('Surplus') && !firstText.includes('Shortfall')) return row;
+    let newRow = row, offset = 0;
+    for (let i = 1; i < cells.length; i++) {
+      const {text: cell, idx: origIdx} = cells[i];
+      const cellText = cell.replace(/<[^>]+>/g, '').trim();
+      const numStr = cellText.replace(/[^0-9.\-]/g, '');
+      if (!numStr || numStr === '-' || numStr === '.') continue;
+      const num = parseFloat(numStr);
+      if (isNaN(num)) continue;
+
+      const isShortfall = num > 0;
+      const color = isShortfall ? RED : GREEN;
+      const abs = Math.abs(Math.round(num));
+      const absStr = abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      const hasStar = cellText.endsWith('*');
+      const newText = (isShortfall ? `-$${absStr}` : `$${absStr}`) + (hasStar ? '*' : '');
+
+      // Collapse the first paragraph in the cell to a single run with newText
+      let modified = cell.replace(/<w:p[ >][\s\S]*?<\/w:p>/, para => {
+        const firstRun = para.match(/<w:r[ >][\s\S]*?<\/w:r>/);
+        if (!firstRun) return para;
+        const rprM = firstRun[0].match(/(<w:rPr[\s\S]*?<\/w:rPr>)/);
+        const rpr = rprM ? rprM[1] : '';
+        const sp = newText.includes(' ') ? ' xml:space="preserve"' : '';
+        const newRun = `<w:r>${rpr}<w:t${sp}>${escapeXml(newText)}</w:t></w:r>`;
+        let ins = false;
+        return para.replace(/<w:r[ >][\s\S]*?<\/w:r>/g, r => { if (!ins) { ins = true; return newRun; } return ''; });
+      });
+      modified = addRunColor(modified, color);
+
+      const start = origIdx + offset;
+      newRow = newRow.slice(0, start) + modified + newRow.slice(start + cell.length);
+      offset += modified.length - cell.length;
+    }
+    return newRow;
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════
